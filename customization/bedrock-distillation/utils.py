@@ -129,7 +129,7 @@ def delete_distillation_buckets(bucket):
         print("\nThere were some issues deleting the buckets.")
         return False
     
-def create_model_distillation_role_and_permissions(bucket_name, unique_id=None, account_id=None, prefix=None):
+def create_model_distillation_role_and_permissions(bucket_name, unique_id=None, account_id=None, prefix=None, region=None):
     # Initialize IAM client
     iam = boto3.client('iam')
     
@@ -141,6 +141,9 @@ def create_model_distillation_role_and_permissions(bucket_name, unique_id=None, 
     if not unique_id:
         unique_id = str(datetime.now().strftime('%Y-%m-%d-%H-%M-%S'))
         role_name = f'custom_model_distilation_role_{unique_id}'
+
+    if region is None:
+        region = boto3.session.Session().region_name or 'us-east-1'
         
     # Define the trust policy (assume role policy)
     trust_policy = {
@@ -189,7 +192,7 @@ def create_model_distillation_role_and_permissions(bucket_name, unique_id=None, 
                 "bedrock:ListModelCustomizationJobs",
                 "bedrock:StopModelCustomizationJob"
             ],
-            "Resource": f"arn:aws:bedrock:*:{account_id}:model-customization-job/*" # fix to support region name
+            "Resource": f"arn:aws:bedrock:{region}:{account_id}:model-customization-job/*" 
         },
 {
             "Sid": "CrossRegionInference",
@@ -198,9 +201,9 @@ def create_model_distillation_role_and_permissions(bucket_name, unique_id=None, 
                 "bedrock:InvokeModel"
             ],
             "Resource": [
-                f"arn:aws:bedrock:*:{account_id}:inference-profile/*", # fix to support region name
-                f"arn:aws:bedrock:*::foundation-model/*", # fix to support region name
-                f"arn:aws:bedrock:*::foundation-model/*", # fix to support region name
+                f"arn:aws:bedrock:{region}:{account_id}:inference-profile/*", 
+                f"arn:aws:bedrock:{region}::foundation-model/*", 
+                f"arn:aws:bedrock:{region}::foundation-model/*", 
             ]
         }
         ]
