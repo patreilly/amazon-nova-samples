@@ -160,7 +160,7 @@ def create_model_distillation_role_and_permissions(bucket_name, unique_id=None, 
                         "aws:SourceAccount": f"{account_id}"
                     },
                     "ArnEquals": {
-                        "aws:SourceArn": f"arn:aws:bedrock:*:{account_id}:model-customization-job/*"
+                        "aws:SourceArn": f"arn:aws:bedrock:{region}:{account_id}:model-customization-job/*"
                     }
                 }
             }
