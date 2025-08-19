@@ -315,6 +315,166 @@ def create_agent_role(agent_name, agent_foundation_model, kb_id=None):
     return agent_role
 
 
+def create_agent_core_execution_role(agent_name, dynamodb_table_name):
+    agent_core_policy_name = f"{agent_name}-agentcore-policy"
+    agent_core_role_name = f'AgentCoreExecutionRole_{agent_name}'
+    
+    # Create IAM policy for agent core
+    agent_core_policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "ECRImageAccess",
+                "Effect": "Allow",
+                "Action": [
+                    "ecr:BatchGetImage",
+                    "ecr:GetDownloadUrlForLayer"
+                ],
+                "Resource": [
+                    f"arn:aws:ecr:{region}:{account_id}:repository/*"
+                ]
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "logs:DescribeLogStreams",
+                    "logs:CreateLogGroup"
+                ],
+                "Resource": [
+                    f"arn:aws:logs:{region}:{account_id}:log-group:/aws/bedrock-agentcore/runtimes/*"
+                ]
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "logs:DescribeLogGroups"
+                ],
+                "Resource": [
+                    f"arn:aws:logs:{region}:{account_id}:log-group:*"
+                ]
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "logs:CreateLogStream",
+                    "logs:PutLogEvents"
+                ],
+                "Resource": [
+                    f"arn:aws:logs:{region}:{account_id}:log-group:/aws/bedrock-agentcore/runtimes/*:log-stream:*"
+                ]
+            },
+            {
+                "Sid": "ECRTokenAccess",
+                "Effect": "Allow",
+                "Action": [
+                    "ecr:GetAuthorizationToken"
+                ],
+                "Resource": "*"
+            },
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "xray:PutTraceSegments",
+                    "xray:PutTelemetryRecords",
+                    "xray:GetSamplingRules",
+                    "xray:GetSamplingTargets"
+                ],
+                "Resource": [
+                    "*"
+                ]
+            },
+            {
+                "Effect": "Allow",
+                "Resource": "*",
+                "Action": "cloudwatch:PutMetricData",
+                "Condition": {
+                    "StringEquals": {
+                        "cloudwatch:namespace": "bedrock-agentcore"
+                    }
+                }
+            },
+            {
+                "Sid": "GetAgentAccessToken",
+                "Effect": "Allow",
+                "Action": [
+                    "bedrock-agentcore:GetWorkloadAccessToken",
+                    "bedrock-agentcore:GetWorkloadAccessTokenForJWT",
+                    "bedrock-agentcore:GetWorkloadAccessTokenForUserId"
+                ],
+                "Resource": [
+                    f"arn:aws:bedrock-agentcore:{region}:{account_id}:workload-identity-directory/default",
+                    f"arn:aws:bedrock-agentcore:{region}:{account_id}:workload-identity-directory/default/workload-identity/{agent_name}-*"
+                ]
+            },
+            {
+                "Sid": "BedrockModelInvocation",
+                "Effect": "Allow",
+                "Action": [
+                    "bedrock:InvokeModel",
+                    "bedrock:InvokeModelWithResponseStream",
+                    "bedrock:ApplyGuardrail"
+                ],
+                "Resource": [
+                    "arn:aws:bedrock:*::foundation-model/*",
+                    f"arn:aws:bedrock:{region}:{account_id}:*"
+                ]
+            },
+            {
+                "Sid": "DynamoDBAccess",
+                "Effect": "Allow",
+                "Action": [
+                    "dynamodb:*"
+                ],
+                "Resource": [
+                    f"arn:aws:dynamodb:{region}:{account_id}:table/{dynamodb_table_name}",
+                    f"arn:aws:dynamodb:{region}:{account_id}:table/{dynamodb_table_name}/*"
+                ]
+            }
+        ]
+    }
+
+    policy_json = json.dumps(agent_core_policy)
+    try:
+        agent_core_policy_response = iam_client.create_policy(
+            PolicyName=agent_core_policy_name,
+            PolicyDocument=policy_json
+        )
+    except iam_client.exceptions.EntityAlreadyExistsException:
+        agent_core_policy_response = iam_client.get_policy(
+            PolicyArn=f"arn:aws:iam::{account_id}:policy/{agent_core_policy_name}"
+        )
+
+    # Create IAM Role for agent core
+    assume_role_policy_document = {
+        "Version": "2012-10-17",
+        "Statement": [{
+            "Effect": "Allow",
+            "Principal": {
+                "Service": "bedrock-agentcore.amazonaws.com"
+            },
+            "Action": "sts:AssumeRole"
+        }]
+    }
+
+    assume_role_policy_document_json = json.dumps(assume_role_policy_document)
+    try:
+        agent_core_role = iam_client.create_role(
+            RoleName=agent_core_role_name,
+            AssumeRolePolicyDocument=assume_role_policy_document_json
+        )
+        time.sleep(10)
+    except iam_client.exceptions.EntityAlreadyExistsException:
+        agent_core_role = iam_client.get_role(
+            RoleName=agent_core_role_name,
+        )
+
+    iam_client.attach_role_policy(
+        RoleName=agent_core_role_name,
+        PolicyArn=agent_core_policy_response['Policy']['Arn']
+    )
+    return agent_core_role['Role']['Arn']
+
+
 def delete_agent_roles_and_policies(agent_name, kb_policy_name):
     agent_bedrock_allow_policy_name = f"{agent_name}-ba"
     agent_role_name = f'AmazonBedrockExecutionRoleForAgents_{agent_name}'
