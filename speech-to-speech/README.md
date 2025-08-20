@@ -37,3 +37,7 @@ The following projects were developed by AWS teams and showcase examples of how 
 - [Nova Sonic VoIP Gateway](https://github.com/aws-samples/sample-s2s-voip-gateway/tree/main)
 
     This project implements a SIP endpoint that acts as a gateway between traditional phone systems and Nova Sonic speech-to-speech. It allows users to call a phone number and have a conversation with Nova Sonic over VoIP. The solution includes deployment options for ECS with CDK or a single EC2 instance, making it versatile for different use cases. It bridges RTP audio streams with Nova Sonic, enabling voice AI capabilities through standard telephony infrastructure.
+
+- [Serverless Nova Sonic Chat](https://github.com/aws-samples/sample-serverless-nova-sonic-chat)
+
+    This serverless implementation provides a lightweight, easily deployable, and scalable Nova Sonic infrastructure using AWS Lambda and AppSync Events, offering a streamlined approach to real-time speech-to-speech communication. It features serverless real-time communication between server and client using AppSync Events, reference to past conversation history, tool use implementation, automatic resume for conversations exceeding 8 minutes, and an extensible web UI built with Next.js.
