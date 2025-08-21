@@ -41,3 +41,8 @@ The following projects were developed by AWS teams and showcase examples of how 
 - [Serverless Nova Sonic Chat](https://github.com/aws-samples/sample-serverless-nova-sonic-chat)
 
     This serverless implementation provides a lightweight, easily deployable, and scalable Nova Sonic infrastructure using AWS Lambda and AppSync Events, offering a streamlined approach to real-time speech-to-speech communication. It features serverless real-time communication between server and client using AppSync Events, reference to past conversation history, tool use implementation, automatic resume for conversations exceeding 8 minutes, and an extensible web UI built with Next.js.
+
+  
+- [Sonic Playground for Experimenting](https://github.com/aws-samples/sample-sonic-java-playground)
+
+    This solution serves as an experimental playground for developers to test and optimize Nova Sonic capabilities by configuring various model parameters and finding the optimal settings for their specific use cases. The application supports creating new conversation sessions with voice IDs for language selection, TopP, Temperature, MaxTokens for response length control, and system prompts. Built with Java Spring Boot and React, it provides a reference implementation for speech-to-speech applications.
