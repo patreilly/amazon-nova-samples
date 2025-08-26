@@ -1,4 +1,4 @@
-# Nova Sonic multi-agent architecture leveraging the Amazon AgentCore
+# Nova Sonic multi-agent architecture leveraging the Amazon Bedrock AgentCore
 
 Multi-agent architecture is a widely used pattern for designing AI assistants. In a voice assistant like Nova Sonic, this architecture coordinates multiple specialized agents to handle complex tasks. Each agent can operate independently, enabling parallel processing, modular design, and scalable solutions.
 
