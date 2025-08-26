@@ -2,7 +2,7 @@
 
 [LiveKit](https://livekit.io/?utm_source=aws&utm_medium=blog&utm_campaign=nova_sonic_plugin) is an open source platform for building voice, video, and physical AI applications that can see, hear, and speak. Amazon Nova Sonic now supports integration with LiveKit through a [Nova Sonic plugin](https://docs.livekit.io/agents/integrations/realtime/nova-sonic/?utm_source=aws&utm_medium=blog&utm_campaign=nova_sonic_plugin). 
 
-To launch a full-stack application that communicates with Nova Sonic via LiveKit, the following components are required. This workshop will guide you through deploying these components using various options—serving as a jumpstart for builders looking to create LiveKit-powered applications that interact with Nova Sonic.
+LiveKit provides high-level SDKs to power WebRTC-based applications. To launch a full-stack application that communicates with Nova Sonic via LiveKit, the following components are required. This workshop will guide you through deploying these components using various options—serving as a jumpstart for builders looking to create LiveKit-powered applications that interact with Nova Sonic.
 
 1. LiveKit Server – A server launched from an open-source library that enables WebRTC communication over the internet.
 
@@ -13,7 +13,7 @@ To launch a full-stack application that communicates with Nova Sonic via LiveKit
     - The sample code also includes a lightweight React web application that serves as an example of a customized LiveKit UI under the `ui` folder.
 
 
-![CDK architecture](../static/sonic-livekit-architecture.png)
+![CDK architecture](/static/sonic-livekit-architecture.png)
 
 ## Install LiveKit
 Clone the repository — skip this step if you’ve already cloned the code by following the instructions in the parent folder.
@@ -100,7 +100,7 @@ uv run python agent.py connect --room my-first-room
 
 - Choose *Manual* tab.
 
-![Livekit UI Manul Setting](../static/livekit-ui-manul-setting.png)
+![Livekit UI Manul Setting](/static/livekit-ui-manul-setting.png)
 
 - In the first text field, enter the LiveKit server HTTP URL which we launched in the previous step: `ws://localhost:7880`.
 
@@ -121,7 +121,7 @@ uv run python agent.py connect --room my-first-room
 - Choose *Connect*.
     You are now connected to Sonic via the LiveKit Sandbox UI. You can start a conversation with Sonic at any time.
 
-    ![Livekit Sandbox UI](../static/livekit-sandbox-ui.png)
+    ![Livekit Sandbox UI](/static/livekit-sandbox-ui.png)
 
 > If you’re disconnected from the LiveKit room, you will have to restart the agent process (agent.py) to talk to Amazon Nova Sonic again. 
 
