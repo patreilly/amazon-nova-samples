@@ -1,12 +1,10 @@
 from bedrock_agentcore_starter_toolkit import Runtime
-from boto3.session import Session
 import boto3
 import time, argparse, os
 
-boto_session = Session()
-region = boto_session.region_name
+region = os.environ.get("AWS_DEFAULT_REGION", "us-east-1")
 
-agent_name = "sonic_workshop_mortgage_agent"
+agent_name = "ac_mortgage_agent"
 entrypoint = "./mortgage_agent.py"
 # Prepare docker file
 agentcore_runtime = Runtime()
