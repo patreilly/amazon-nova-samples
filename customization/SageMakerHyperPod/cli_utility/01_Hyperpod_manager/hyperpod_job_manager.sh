@@ -3,13 +3,21 @@
 # HyperPod Job Manager
 # A comprehensive tool for managing HyperPod jobs including submission, monitoring, and administration
 
-# Color definitions
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Color
+# # Color definitions
+# RED='\033[0;31m'
+# GREEN='\033[0;32m'
+# YELLOW='\033[1;33m'
+# BLUE='\033[0;34m'
+# CYAN='\033[0;36m'
+# NC='\033[0m' # No Color
+
+RED=''
+GREEN=''
+YELLOW=''
+BLUE=''
+CYAN=''
+NC=''
+
 
 # Formatting helpers
 print_header() {
@@ -47,8 +55,8 @@ declare -a CONTAINER_NAMES=("nova-sft" "nova-dpo" "nova-ppo" "nova-cpt" "nova-ev
 declare -a CONTAINER_URIS=(
     "708977205387.dkr.ecr.us-east-1.amazonaws.com/nova-fine-tune-repo:SM-HP-SFT-latest"
     "708977205387.dkr.ecr.us-east-1.amazonaws.com/nova-fine-tune-repo:SM-HP-DPO-latest"
-    "078496829476.dkr.ecr.us-west-2.amazonaws.com/nova-fine-tune-repo:HP-PPO-latest"
-    "078496829476.dkr.ecr.us-west-2.amazonaws.com/nova-fine-tune-repo:HP-CPT-latest"
+    "708977205387.dkr.ecr.us-east-1.amazonaws.com/nova-fine-tune-repo:SMHP-PPO-TRAIN-latest"
+    "708977205387.dkr.ecr.us-east-1.amazonaws.com/nova-fine-tune-repo:HP-CPT-latest"
     "708977205387.dkr.ecr.us-east-1.amazonaws.com/nova-evaluation-repo:SM-HP-Eval-latest"
 )
 
@@ -168,15 +176,16 @@ submit_job() {
         read -p "Enter custom container URI: " CONTAINER_URI
     else
         CONTAINER_URI=${CONTAINER_URIS[$CONTAINER_KEY]}
+        echo $CONTAINER_URI
         if [ -z "$CONTAINER_URI" ]; then
             print_warning "Invalid container key! Using default."
-            CONTAINER_URI="763104351884.dkr.ecr.us-west-2.amazonaws.com/huggingface-pytorch-training:2.0.0-transformers4.28.1-gpu-py310-cu118-ubuntu20.04-sagemaker"
         fi
         
         # Special handling for evaluation container
         if [ "$CONTAINER_KEY" = "4" ]; then
             print_section "Evaluation Configuration"
-            read -p "Enter model manifest path (s3://.../manifest.json): " MODEL_PATH
+            read -p "Enter model manifest path (s3://.../manifest.json) OR base model( eg: nova-micro/prod
+            ): " MODEL_PATH
             if [ -z "$MODEL_PATH" ]; then
                 print_error "Model manifest path is required for evaluation!"
                 exit 1
@@ -204,7 +213,7 @@ submit_job() {
     fi
     
     print_section "Resource Configuration"
-    read -p "Enter instance type (e.g., ml.p4d.24xlarge): " INSTANCE_TYPE
+    read -p "Enter instance type (e.g., ml.p5.48xlarge): " INSTANCE_TYPE
     if [ -z "$INSTANCE_TYPE" ]; then
         print_error "Instance type is required!"
         exit 1
@@ -213,7 +222,6 @@ submit_job() {
     print_section "S3 Configuration (Optional)"
     read -p "Enter input S3 data path: " INPUT_S3_DATA
     read -p "Enter output S3 path: " OUTPUT_S3_PATH
-    read -p "Enter tensorboard S3 path: " TENSORBOARD_S3_PATH
     
     print_section "Additional Parameters"
     echo "Enter additional parameters in JSON format, or press Enter to skip"
