@@ -184,8 +184,7 @@ submit_job() {
         # Special handling for evaluation container
         if [ "$CONTAINER_KEY" = "4" ]; then
             print_section "Evaluation Configuration"
-            read -p "Enter model manifest path (s3://.../manifest.json) OR base model( eg: nova-micro/prod
-            ): " MODEL_PATH
+            read -p "Enter model manifest path (s3://.../manifest.json) OR base model(eg: nova-micro/prod): " MODEL_PATH
             if [ -z "$MODEL_PATH" ]; then
                 print_error "Model manifest path is required for evaluation!"
                 exit 1
@@ -219,14 +218,29 @@ submit_job() {
         exit 1
     fi
     
-    print_section "S3 Configuration (Optional)"
+print_section "S3 Configuration (Optional)"
+# Check if we already have data path from evaluation configuration
+if [ "$CONTAINER_KEY" = "4" ] && [[ "$EVAL_PARAMS" == *"recipes.run.data_s3_path"* ]]; then
+    echo "Input S3 data path already configured in evaluation settings."
+    INPUT_S3_DATA=""
+else
     read -p "Enter input S3 data path: " INPUT_S3_DATA
-    read -p "Enter output S3 path: " OUTPUT_S3_PATH
+fi
+read -p "Enter output S3 path: " OUTPUT_S3_PATH
     
-    print_section "Additional Parameters"
-    echo "Enter additional parameters in JSON format, or press Enter to skip"
-    echo "Example: \"recipes.training_config.model\": 1e-4, \"recipes.training_config.trainer.max_epochs\": 1"
-    read -p "Additional parameters: " ADDITIONAL_PARAMS
+print_section "Additional Parameters"
+echo "Enter additional parameters in JSON format, or press Enter to skip"
+echo "Example: \"recipes.training_config.model\": 1e-4, \"recipes.training_config.trainer.max_epochs\": 1"
+read -p "Additional parameters: " USER_ADDITIONAL_PARAMS
+
+# Combine user additional parameters with existing ADDITIONAL_PARAMS (which may include EVAL_PARAMS)
+if [ -n "$USER_ADDITIONAL_PARAMS" ]; then
+    if [ -n "$ADDITIONAL_PARAMS" ]; then
+        ADDITIONAL_PARAMS="$ADDITIONAL_PARAMS, $USER_ADDITIONAL_PARAMS"
+    else
+        ADDITIONAL_PARAMS="$USER_ADDITIONAL_PARAMS"
+    fi
+fi
     
     # Build the override parameters JSON
     OVERRIDE_PARAMS="{"
