@@ -108,7 +108,7 @@ class SimpleNovaSonic:
                     "promptName": "{self.prompt_name}",
                     "contentName": "{self.content_name}",
                     "type": "TEXT",
-                    "interactive": true,
+                    "interactive": false,
                     "role": "SYSTEM",
                     "textInputConfiguration": {{
                         "mediaType": "text/plain"

@@ -669,7 +669,7 @@ export class NovaSonicBidirectionalStreamClient {
           promptName: session.promptName,
           contentName: textPromptID,
           type: "TEXT",
-          interactive: true,
+          interactive: false,
           role: "SYSTEM",
           textInputConfiguration: textConfig,
         },

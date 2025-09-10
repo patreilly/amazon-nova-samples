@@ -1,0 +1,1 @@
+{"system": [{"text": "This is the sample System prompt"}], "messages": [{"role": "user", "content": [{"text": "This is the sample User Prompt"}]}, {"role": "assistant", "content": [{"text": ""}]}]}

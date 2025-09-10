@@ -351,7 +351,7 @@ export class WebSocketEventManager {
                     contentName: systemContentName,
                     type: "TEXT",
                     role: "SYSTEM",
-                    interactive: true,
+                    interactive: false,
                     textInputConfiguration: {
                         mediaType: "text/plain"
                     }

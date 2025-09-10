@@ -238,7 +238,7 @@ class BedrockStreamManager:
             "contentName": "%s",
             "type": "TEXT",
             "role": "%s",
-            "interactive": true,
+            "interactive": false,
                 "textInputConfiguration": {
                     "mediaType": "text/plain"
                 }
