@@ -46,3 +46,8 @@ The following projects were developed by AWS teams and showcase examples of how 
 - [Sonic Playground for Experimenting](https://github.com/aws-samples/sample-sonic-java-playground)
 
     This solution serves as an experimental playground for developers to test and optimize Nova Sonic capabilities by configuring various model parameters and finding the optimal settings for their specific use cases. The application supports creating new conversation sessions with voice IDs for language selection, TopP, Temperature, MaxTokens for response length control, and system prompts. Built with Java Spring Boot and React, it provides a reference implementation for speech-to-speech applications.
+
+
+- [WebRTC-based Nova Sonic Solution](https://github.com/aws-samples/sample-nova-sonic-speech2speech-webrtc)
+
+    This solution delivers real-time Speech-to-Speech capabilities through WebRTC integration, leveraging AWS Bedrock Nova Sonic and Amazon Kinesis Video Streams with WebRTC. The system features a modular architecture with separate Python backend and React frontend components, enabling cross-platform functionality across Windows, macOS, and Linux. Key technical components include RTC audio processing, AWS service integration (Bedrock, Kinesis Video Streams), and tool support for MCP servers and Strands agents.
