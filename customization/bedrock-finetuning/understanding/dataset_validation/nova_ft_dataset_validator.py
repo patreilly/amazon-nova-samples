@@ -364,7 +364,13 @@ def validate_converse_dataset(args):
         samples = load_jsonl_data(args.input_file)
         num_samples = len(samples)
         print(f"Loaded {num_samples} samples from {args.input_file}")
-        validate_data_record_bounds(num_samples, args.model_name)
+        
+        # Only validate data record bounds for Bedrock platform
+        if args.platform.lower() == "bedrock":
+            print(f"Platform: {args.platform} - Validating data record bounds")
+            validate_data_record_bounds(num_samples, args.model_name)
+        else:
+            print(f"Platform: {args.platform} - Skipping data record bounds validation")
     except Exception as e:
         print(f"Error loading or validating file bounds: {e}")
         raise
@@ -521,6 +527,14 @@ if __name__ == "__main__":
         choices=["sft", "dpo", "SFT", "DPO"],
         required=True,
         help="Choose a task type: sft, dpo",
+    )
+    parser.add_argument(
+        "-p",
+        "--platform",
+        type=str,
+        choices=["bedrock", "sagemaker"],
+        default="bedrock",
+        help="Choose a platform: bedrock, sagemaker (default: bedrock)",
     )
     args = parser.parse_args()
     validate_converse_dataset(args)
