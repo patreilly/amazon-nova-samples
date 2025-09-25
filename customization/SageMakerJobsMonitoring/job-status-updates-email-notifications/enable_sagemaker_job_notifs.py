@@ -46,7 +46,7 @@ def main():
         "--region",
         default="us-east-1",
         type=validate_region_format,
-        help="The AWS region to deploy the resources in (e.g. us-east-1)."
+        help="The AWS region to monitor Nova customization job notifications in (e.g. us-east-1)."
     )
     parser.add_argument(
         "--platform",

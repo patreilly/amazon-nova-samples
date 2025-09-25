@@ -21,10 +21,9 @@ python enable_sagemaker_job_notifs.py --email test@amazon.com test2@gmail.com --
 ```
 ### Steps:
 1. Run the above command, replacing the different parameters with your associated values.
-2. Check CloudFormation in the AWS Console to make sure the stack creation succeeds and all the resources are deployed to your AWS account. 
-3. After the stack is fully deployed, check your email(s) and confirm the subscription so you can receive email notifications when a job is completed. 
+2. After the stack is fully deployed, check your email(s) and confirm the subscription so you can receive email notifications when a job is completed. 
 ![An image displaying the subscription email the user will receive upon stack completion.](../imgs/job_subscription_example.png)
-4. Once your TJ or HP job completes, you should get a notification to your email that looks similar to the below image. Each job entry in the email should contain: the job name, the updated status, timestamp that the event occurred. 
+3. Once your TJ or HP job completes, you should get a notification to your email that looks similar to the below image. Each job entry in the email should contain: the job name, the updated status, timestamp that the event occurred. 
 ![An image displaying an example of a job notification email that the user will receive when a job completes.](../imgs/job_notification_example.png)
 ### Parameters:
 - **Email:** Include 1+ email that you want job notifications to go to, separated by a space between each email.  
