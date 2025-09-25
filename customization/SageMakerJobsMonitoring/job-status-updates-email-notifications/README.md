@@ -5,7 +5,7 @@ When a job's status gets changed from running to succeeded/failed, an email noti
 ### General: 
 - boto3: Run ```pip install boto3```
 ### HyperPod-Specific: 
-- **Amazon CloudWatch Observability** must be installed on the EKS cluster running your HP jobs: This enables Container Insights logs to be generate. Information on how to install the add-on can be found [here](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Observability-EKS-addon.html). 
+- **Amazon CloudWatch Observability** must be installed on the EKS cluster running your HP jobs: This enables Container Insights logs to be generated. Information on how to install the add-on can be found [here](https://docs.aws.amazon.com/AmazonCloudWatch/latest/monitoring/install-CloudWatch-Observability-EKS-addon.html). 
 ## Usage:
 Make sure you've refreshed your AWS credentials before running the below command. If you want to check the parameters to use, run the following command:
 ```
