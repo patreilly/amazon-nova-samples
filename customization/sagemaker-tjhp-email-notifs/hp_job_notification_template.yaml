@@ -1,0 +1,285 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Resources for monitoring SageMaker HyperPod job status changes'
+
+Parameters:
+  EmailAddress:
+    Type: String
+    Description: The email address(es) where job status notifications will be sent. Each email must be in the format email1@domain.com. If there are multiple emails, they should be separated by a singular space. For example, "email1@domain.com email2@domain.com".
+    AllowedPattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(,[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})*$'
+    ConstraintDescription: Each email must be in the format email1@domain.com.
+  Rate:
+    Type: Number
+    Description: Sets how frequently (in minutes) the system checks for SageMaker HyperPod job status changes. For example, if set to 15, the system will check every 15 minutes for any jobs that succeeded or failed in the previous 15-minute period. Email notifications are only sent when status changes are detected.
+    MinValue: 1
+    Default: 15
+    ConstraintDescription: This value must be a positive number to represent the number of minutes between system checks for HyperPod job status changes.
+
+Resources:
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: sagemaker-hyperpod-job-status-change-notifications
+      DisplayName: SageMaker HyperPod Job Status Change
+
+  NotificationTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt LambdaExecutionRole.Arn
+            Action: sns:Publish
+            Resource: !Ref NotificationTopic
+      Topics:
+        - !Ref NotificationTopic
+
+  SageMakerHPTrainingRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: sagemaker-hyperpod-job-status-change-rule
+      Description: 'Scheduled rule to monitor SageMaker HyperPod job status changes'
+      ScheduleExpression: !Sub "rate(${Rate} minutes)"
+      State: ENABLED
+      Targets:
+        - Arn: !GetAtt HyperPodJobMonitorLambda.Arn
+          Id: HyperPodJobMonitorLambda
+
+  HyperPodJobMonitorLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: sm-hyperpod-job-monitor-lambda
+      Handler: index.lambda_handler
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Runtime: python3.13
+      Timeout: 15
+      Environment:
+        Variables:
+          SNS_TOPIC_ARN: !Ref NotificationTopic
+      Code:
+        ZipFile: |
+          import boto3
+          import json
+          import os
+          import re
+          from datetime import datetime, timedelta
+          
+          sns_client = boto3.client("sns")
+          logs_client = boto3.client("logs")
+          eventbridge_client = boto3.client("events")
+        
+          def get_log_group_names(paginator, prefix, suffix):
+            log_groups = []
+            for page in paginator.paginate(logGroupNamePrefix=prefix):
+              for log_group in page['logGroups']:
+                if log_group['logGroupName'].endswith(suffix):
+                  log_groups.append(log_group['logGroupName'])
+            return log_groups
+          
+          def get_eventbridge_update_interval():
+            schedule = eventbridge_client.describe_rule(Name='sagemaker-hyperpod-job-status-change-rule')['ScheduleExpression']
+            minutes = int(re.search(r'rate\((\d+) minute', schedule).group(1))
+            return minutes
+          
+          def format_log_timestamp(timestamp_ms):
+            seconds = timestamp_ms / 1000
+            dt = datetime.fromtimestamp(seconds)
+            return dt.strftime('%Y-%m-%d %H:%M:%S')
+          
+          def format_container_insights_status(event):
+            json_name = re.search(r'PyTorchJob=([\w-]+)', event['message']).group(1)
+            timestamp = format_log_timestamp(event['timestamp'])
+            return [json_name, timestamp]
+          
+          def get_changed_container_insights_events(log_groups, stream_partial_name, interval):
+            start_time = int((datetime.now() - timedelta(minutes=interval)).timestamp() * 1000)
+            end_time = int(datetime.now().timestamp() * 1000)
+            container_insights_identifier = "-application.var.log.containers.hyperpod-dependencies-training-operators-"
+            changed_jobs = {}
+          
+            # Loop through provided log groups. 
+            for log_group in log_groups:
+              # Retrieves log streams that match the correct prefix. 
+              log_streams_to_search = logs_client.describe_log_streams(
+              logGroupName=log_group,
+              logStreamNamePrefix='hyperpod-i-',
+              orderBy='LogStreamName',
+              descending=True
+              )
+          
+              # Loop through filtered log streams and retrieve log events from the last 15 minutes of each. 
+              if log_streams_to_search['logStreams']:
+                for stream in log_streams_to_search['logStreams']:
+                  # Check if the correct identifier is in the log stream name before storing the events.
+                  if container_insights_identifier in stream['logStreamName']:
+                    log_events_to_search = logs_client.get_log_events(
+                    logGroupName=log_group,
+                    logStreamName=stream['logStreamName'],
+                    startTime=start_time,
+                    endTime=end_time
+                    )
+                    
+                    # Loop through each event and add succeeded/failed events to a dictionary {job name:[status, timestamp]}
+                    for event in log_events_to_search['events']:
+                      if 'succeeded=1' in event['message'] and 'ReplicaType=Master' in event['message']:
+                        [job_name, completion_time] = format_container_insights_status(event)
+                        changed_jobs[job_name] = ['succeeded', completion_time]
+                      elif 'failed=1' in event['message'] and 'ReplicaType=Master' in event['message']:
+                        [job_name, completion_time] = format_container_insights_status(event)
+                        changed_jobs[job_name] = ['failed', completion_time]
+                    
+                    # Break out of the loop after we've found the correct log stream to work with. 
+                    break
+            return changed_jobs
+          
+          def lambda_handler(event, context):
+            CW_INSIGHTS_GROUP_PREFIX = "/aws/containerinsights/"
+            CW_INSIGHTS_GROUP_SUFFIX = "/application"
+            CW_INSIGHTS_STREAM_PARTIAL_NAME = "application.var.log.containers.hyperpod-dependencies-training-operators"
+          
+            paginator = logs_client.get_paginator('describe_log_groups')
+          
+            # Checks if CloudWatch has any "Container Insights" log groups and saves those if so. 
+            log_groups = get_log_group_names(paginator, CW_INSIGHTS_GROUP_PREFIX, CW_INSIGHTS_GROUP_SUFFIX)
+            search_interval = get_eventbridge_update_interval()
+            changed_jobs = {}
+          
+            # Retrieve jobs whose statuses have changed within the EB interval from logs. 
+            if log_groups:
+              changed_jobs = get_changed_container_insights_events(log_groups, CW_INSIGHTS_STREAM_PARTIAL_NAME, search_interval)
+            else:
+              print("No Container Insights log groups found.")
+          
+            # Publish SNS notification if any job changes are detected. 
+            if changed_jobs:
+              # Format and clean up the changed_jobs dictionary (status[0] is the job status, status[1] is the timestamp).
+              message = "\n".join(f"HyperPod job {name}'s status has changed to {status[0]} at {status[1]} UTC."
+              for name, status in changed_jobs.items())
+          
+              sns_client.publish(
+                TopicArn = os.environ['SNS_TOPIC_ARN'],
+                Message = message,
+                Subject = "HyperPod Job Status Change"
+              )
+
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sm-hyperpod-monitoring-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: CloudWatchLogsAccess
+          PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                - Effect: Allow
+                  Action:
+                    - logs:DescribeLogGroups
+                    - logs:DescribeLogStreams
+                    - logs:GetLogEvents
+                  Resource: '*'
+                - Effect: Allow
+                  Action:
+                    - logs:FilterLogEvents
+                  Resource: !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
+        - PolicyName: EventBridgeAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - events:DescribeRule
+                Resource: arn:aws:events:*:*:rule/*
+
+  InvokeLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref HyperPodJobMonitorLambda
+      Action: 'lambda:InvokeFunction'
+      Principal: events.amazonaws.com
+      SourceArn: !GetAtt SageMakerHPTrainingRule.Arn
+
+  SMHPLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sm-hp-email-subscription-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SMHPSubscribeToSNSNotifications
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Subscribe
+                  - sns:Unsubscribe
+                Resource: !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
+
+  SMHPEmailSubscriptionLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: sm-hp-subscription-lambda
+      Handler: index.lambda_handler
+      Role: !GetAtt SMHPLambdaExecutionRole.Arn
+      Runtime: python3.13
+      Timeout: 15
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          
+          def lambda_handler(event, context):
+              try:
+                  if event['RequestType'] in ['Create', 'Update']:
+                      sns_client = boto3.client('sns')
+                      emails = event['ResourceProperties']['EmailAddress'].split(',')
+                      topic_arn = event['ResourceProperties']['TopicArn']
+
+                      for email in emails:
+                          response = sns_client.subscribe(
+                              TopicArn=topic_arn,
+                              Protocol='email',
+                              Endpoint=email.strip()
+                          )
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+          
+                  elif event['RequestType'] == 'Delete':
+                      # Have to still send a cfn response so it doesn't get stuck in a waiting state.
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+          
+              except Exception as e:
+                  print(e)
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+  SMHPEmailSubscriptionCustomResource:
+    Type: Custom::EmailSubscription
+    Properties:
+      ServiceToken: !GetAtt SMHPEmailSubscriptionLambda.Arn
+      EmailAddress: !Ref EmailAddress
+      TopicArn: !Ref NotificationTopic
+
+Outputs:
+  TopicArn:
+    Description: 'ARN of the SNS Topic'
+    Value: !Ref NotificationTopic
+  RuleName:
+    Description: 'Name of the EventBridge Rule'
+    Value: !Ref SageMakerHPTrainingRule
