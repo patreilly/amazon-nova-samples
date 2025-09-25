@@ -102,22 +102,22 @@ Resources:
             for log_group in log_groups:
               # Retrieves log streams that match the correct prefix. 
               log_streams_to_search = logs_client.describe_log_streams(
-              logGroupName=log_group,
-              logStreamNamePrefix='hyperpod-i-',
-              orderBy='LogStreamName',
-              descending=True
+                logGroupName=log_group,
+                logStreamNamePrefix='hyperpod-i-',
+                orderBy='LogStreamName',
+                descending=True
               )
           
-              # Loop through filtered log streams and retrieve log events from the last 15 minutes of each. 
+              # Loop through filtered log streams and retrieve log events from the last x minutes of each. 
               if log_streams_to_search['logStreams']:
                 for stream in log_streams_to_search['logStreams']:
                   # Check if the correct identifier is in the log stream name before storing the events.
                   if container_insights_identifier in stream['logStreamName']:
                     log_events_to_search = logs_client.get_log_events(
-                    logGroupName=log_group,
-                    logStreamName=stream['logStreamName'],
-                    startTime=start_time,
-                    endTime=end_time
+                      logGroupName=log_group,
+                      logStreamName=stream['logStreamName'],
+                      startTime=start_time,
+                      endTime=end_time
                     )
                     
                     # Loop through each event and add succeeded/failed events to a dictionary {job name:[status, timestamp]}
