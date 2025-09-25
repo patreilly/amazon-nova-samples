@@ -51,7 +51,7 @@ Resources:
                 Action:
                   - sns:Subscribe
                   - sns:Unsubscribe
-                Resource: '*'
+                Resource: !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
 
   SMTJEmailSubscriptionLambda:
     Type: AWS::Lambda::Function
@@ -66,10 +66,11 @@ Resources:
           import boto3
           import cfnresponse
           
+          sns_client = boto3.client('sns')
+          
           def lambda_handler(event, context):
               try:
                   if event['RequestType'] in ['Create', 'Update']:
-                      sns_client = boto3.client('sns')
                       emails = event['ResourceProperties']['EmailAddress'].split(',')
                       topic_arn = event['ResourceProperties']['TopicArn']
 
