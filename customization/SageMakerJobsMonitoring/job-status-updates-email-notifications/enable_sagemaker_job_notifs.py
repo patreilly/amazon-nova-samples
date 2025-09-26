@@ -113,7 +113,7 @@ def main():
         # Wait for resources to generate
         wait_for_resources_to_generate(cf_client, stack_name)
 
-        print("Please check your email for a subscription confirmation email, and click 'Confirm subscription' to enable email notifications!")
+        print("Please check your email for a subscription confirmation email, and click 'Confirm subscription' to start receiving job status email notifications!")
         print("You'll receive the confirmation email within a few minutes.")
 
     except cf_client.exceptions.AlreadyExistsException:
