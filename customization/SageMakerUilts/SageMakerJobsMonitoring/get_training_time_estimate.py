@@ -115,21 +115,25 @@ def select_from_list(prompt: str, options: list):
         print(f"Invalid choice. Please enter a number between 1 and {len(options)}.")
 
 def format_days_hours_minutes(hours: float):
-    """Convert decimal hours to 'Xd Yh Zm' format, omitting zero units."""
+    """Convert decimal hours to 'Xd Yh Zm'"""
     total_minutes = int(round(hours * 60))
     days = total_minutes // (24 * 60)
     hours_rem = (total_minutes % (24 * 60)) // 60
     minutes = total_minutes % 60
 
+    def pluralize(value, unit):
+        return f"{value} {unit}" + ("s" if value != 1 else "")
+
     parts = []
     if days > 0:
-        parts.append(f"{days} days")
+        parts.append(pluralize(days, "day"))
     if hours_rem > 0:
-        parts.append(f"{hours_rem} hours")
+        parts.append(pluralize(hours_rem, "hour"))
     if minutes > 0:
-        parts.append(f"{minutes} minutes")
+        parts.append(pluralize(minutes, "minute"))
 
     return " ".join(parts) if parts else "Less than a minute"
+
 
 def main():
     # Present only training types that have baselines

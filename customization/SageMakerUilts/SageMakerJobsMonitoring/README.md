@@ -1,5 +1,5 @@
 # SageMaker Job Monitoring
-This folder features a collection of observability scripts sourrounding Sagemaker HyerPod and Training Jobs. Please
+This folder features a collection of observability scripts surrounding Sagemaker HyperPod and Training Jobs. Please
 visit any of the below links to see instructions for using each of the scripts
 
 - [SageMaker Training Job & HyperPod Job Status Email Notifications](#sagemaker-training-job--hyperpod-job-status-email-notifications)
@@ -45,7 +45,7 @@ python enable_sagemaker_job_notifs.py --email test@amazon.com test2@gmail.com --
 ## SageMaker Training Job & HyperPod Nova customization training job estimates
 
 This script can be used to estimate training times for CPT/PPO/SFT/DPO Nova Customization training
-jobs on both Sagemaker HyperPod and SageMaker Training Jobs.
+jobs on both SageMaker HyperPod and SageMaker Training Jobs.
 
 ### Prerequisites:
 Ensure that you have access to the recipe that you plan on using for your training job. This recipe should be similar to 
