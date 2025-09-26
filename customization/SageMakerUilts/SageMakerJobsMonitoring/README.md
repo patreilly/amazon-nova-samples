@@ -111,7 +111,7 @@ Enter the number of your choice: 3
 Enter path to YAML file: test-recipe.yaml
 Enter dataset sample size (press Enter to use default 100,000): 100000
 
-Estimated training time (cpt, nova-pro, 8 P5s, 256 GBS, 8192 max_length): 1 days 6 hours
+Estimated training time (cpt, nova-pro, 8 P5s, 256 GBS, 8192 max_length): 1 day 6 hours
 
 Please note that these estimates are approximate projections and should not be interpreted as definitive training 
 durations. Please monitor CloudWatch logs for more accurate progress and estimates.
