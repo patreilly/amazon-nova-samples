@@ -1,13 +1,14 @@
 """
-This script can be used to estimate training times for CPT/PPO/SFT/DPO training jobs on both
-Hyperpod and SageMaker Training Jobs. To use the script, ensure that you have your YAML recipe
-that you anticipate using to start your job.
+This script can be used to estimate training times for CPT/PPO/SFT/DPO Nova Customization training
+jobs on both Sagemaker HyperPod and SageMaker Training Jobs. To use the script, ensure that you have
+your YAML recipe that you anticipate using to start your job.
 
 Run the script by using a command similar to: python get_training_time_estimate.py
 
-Simply walk through the prompts to receive your training time estimate. Please note that these
-estimates are rough ballparks and are in no way representative of true training times. For more
-accurate estimates, please check CloudWatch logs while your training job is running.
+Simply walk through the prompts to receive your training time estimate. Please note that these estimates
+are approximate projections and should not be interpreted as definitive training durations. Actual training
+times may vary significantly based on multiple factors. For more accurate estimates, please check CloudWatch
+logs while your training job is running.
 """
 
 import os
@@ -128,7 +129,7 @@ def format_days_hours_minutes(hours: float):
     if minutes > 0:
         parts.append(f"{minutes} minutes")
 
-    return " ".join(parts) if parts else "0 minutes"
+    return " ".join(parts) if parts else "Less than a minute"
 
 def main():
     # Present only training types that have baselines
@@ -198,10 +199,9 @@ def main():
         print(f"\nEstimated training time ({desc}): {formatted_time}")
 
     print(
-        "These estimates are only rough ballparks and are not indicative in any way of true training times. "
-        "Please monitor CloudWatch logs for more accurate progress and estimates."
+        "Please note that these estimates are approximate projections and should not be interpreted "
+        "as definitive training durations. Please monitor CloudWatch logs for more accurate progress and estimates."
     )
 
 if __name__ == "__main__":
     main()
-
