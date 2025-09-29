@@ -37,6 +37,11 @@ let displayAssistantText = false;
 let role;
 const audioPlayer = new AudioPlayer();
 let sessionInitialized = false;
+let manualDisconnect = false;
+
+let samplingRatio = 1;
+const TARGET_SAMPLE_RATE = 16000; 
+const isFirefox = navigator.userAgent.toLowerCase().includes('firefox');
 
 // Initialize WebSocket audio
 async function initAudio() {
@@ -53,9 +58,19 @@ async function initAudio() {
             }
         });
 
-        audioContext = new AudioContext({
-            sampleRate: 16000
-        });
+        if (isFirefox) {
+            //firefox doesn't allow audio context have differnt sample rate than what the user media device offers
+            audioContext = new AudioContext();
+        } else {
+            audioContext = new AudioContext({
+                sampleRate: TARGET_SAMPLE_RATE
+            });
+        }
+
+        //samplingRatio - is only relevant for firefox, for Chromium based browsers, it's always 1
+        samplingRatio = audioContext.sampleRate / TARGET_SAMPLE_RATE;
+        console.log(`Debug AudioContext- sampleRate: ${audioContext.sampleRate} samplingRatio: ${samplingRatio}`)
+        
 
         await audioPlayer.start();
 
@@ -76,6 +91,17 @@ async function initializeSession() {
     statusElement.textContent = "Initializing session...";
 
     try {
+        // Wait for server acknowledgment before proceeding
+        await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
+            
+            socket.emit('initializeConnection', (ack) => {
+                clearTimeout(timeout);
+                if (ack?.success) resolve();
+                else reject(new Error(ack?.error || 'Connection failed'));
+            });
+        });
+
         // Send events in sequence
         socket.emit('promptStart');
         socket.emit('systemPrompt');
@@ -88,6 +114,7 @@ async function initializeSession() {
         console.error("Failed to initialize session:", error);
         statusElement.textContent = "Error initializing session";
         statusElement.className = "error";
+        throw error;
     }
 }
 
@@ -95,6 +122,24 @@ async function startStreaming() {
     if (isStreaming) return;
 
     try {
+        // Reconnect if disconnected
+        if (!socket.connected) {
+            socket.connect();
+            // Wait for connection
+            await new Promise((resolve) => {
+                if (socket.connected) {
+                    resolve();
+                } else {
+                    socket.once('connect', resolve);
+                }
+            });
+        }
+
+        // Restart audioPlayer if needed
+        if (!audioPlayer.initialized) {
+            await audioPlayer.start();
+        }
+
         // First, make sure the session is initialized
         if (!sessionInitialized) {
             await initializeSession();
@@ -111,12 +156,25 @@ async function startStreaming() {
                 if (!isStreaming) return;
 
                 const inputData = e.inputBuffer.getChannelData(0);
-
+                const numSamples = Math.round(inputData.length / samplingRatio)
+                const pcmData = isFirefox ? (new Int16Array(numSamples)) : (new Int16Array(inputData.length));
+                
                 // Convert to 16-bit PCM
-                const pcmData = new Int16Array(inputData.length);
-                for (let i = 0; i < inputData.length; i++) {
-                    pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+                if (isFirefox) {                    
+                    for (let i = 0; i < inputData.length; i++) {
+                        //NOTE: for firefox the samplingRatio is not 1, 
+                        // so it will downsample by skipping some input samples
+                        // A better approach is to compute the mean of the samplingRatio samples.
+                        // or pass through a low-pass filter first 
+                        // But skipping is a preferable low-latency operation
+                        pcmData[i] = Math.max(-1, Math.min(1, inputData[i * samplingRatio])) * 0x7FFF;
+                    }
+                } else {
+                    for (let i = 0; i < inputData.length; i++) {
+                        pcmData[i] = Math.max(-1, Math.min(1, inputData[i])) * 0x7FFF;
+                    }
                 }
+                
 
                 // Convert to base64 (browser-safe way)
                 const base64Data = arrayBufferToBase64(pcmData.buffer);
@@ -172,12 +230,24 @@ function stopStreaming() {
     statusElement.textContent = "Processing...";
     statusElement.className = "processing";
 
-    audioPlayer.stop();
+    audioPlayer.bargeIn();
     // Tell server to finalize processing
     socket.emit('stopAudio');
 
     // End the current turn in chat history
     chatHistoryManager.endTurn();
+
+    // Reset session for new connection
+    sessionInitialized = false;
+    
+    // Mark as manual disconnect
+    manualDisconnect = true;
+    
+    // Disconnect from server to end current session
+    socket.disconnect();
+    
+    statusElement.textContent = "Stopped. Click Start to begin new session.";
+    statusElement.className = "ready";
 }
 
 // Base64 to Float32Array conversion
@@ -467,7 +537,7 @@ socket.on('streamComplete', () => {
     if (isStreaming) {
         stopStreaming();
     }
-    statusElement.textContent = "Ready";
+    statusElement.textContent = "Microphone ready. Click Start to begin.";
     statusElement.className = "ready";
 });
 
@@ -479,10 +549,20 @@ socket.on('connect', () => {
 });
 
 socket.on('disconnect', () => {
-    statusElement.textContent = "Disconnected from server";
-    statusElement.className = "disconnected";
-    startButton.disabled = true;
-    stopButton.disabled = true;
+    if (manualDisconnect) {
+        // Manual disconnect - keep buttons enabled for restart
+        manualDisconnect = false;
+        statusElement.textContent = "Stopped. Click Start to begin new session.";
+        statusElement.className = "ready";
+        startButton.disabled = false;
+        stopButton.disabled = true;
+    } else {
+        // Unexpected disconnect - disable buttons
+        statusElement.textContent = "Disconnected from server";
+        statusElement.className = "disconnected";
+        startButton.disabled = true;
+        stopButton.disabled = true;
+    }
     sessionInitialized = false;
     hideUserThinkingIndicator();
     hideAssistantThinkingIndicator();
