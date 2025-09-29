@@ -108,14 +108,14 @@ class SageMakerTrainingJobStatus:
                     f"Estimated training time remaining: {remaining_minutes:.1f} minutes "
                     f"[{remaining_minutes/60:.1f} hours]")
 
-        return (f"Training for job {self.job_name} is in progress, but job progress could not be determined "
+        return (f"Training for job {self.job_name} is in progress, but the job progress percentage could not be determined "
                 f"as of {current_time.strftime('%H:%M UTC %m/%d/%Y')}. Try again in a few minutes.")
 
     def _handle_non_running_job(self, status: str, response: Dict[str, Any]) -> str:
         """Handle status reporting for non-running jobs."""
         end_time = response.get('TrainingEndTime', datetime.now(timezone.utc))
         if status == 'Failed':
-            failure_reason = response.get('FailureReason', 'Unknown')
+            failure_reason = response.get('FailureReason', 'an unknown reason')
             return (f"Job {self.job_name} failed at {end_time.strftime('%H:%M UTC %m/%d/%Y')} "
                     f"due to \"{failure_reason}\"")
         elif status == 'Completed':

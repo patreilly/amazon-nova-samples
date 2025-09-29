@@ -134,7 +134,7 @@ logs while your training job is running.
 
 ## SageMaker Training Job Progress
 This tool enables users to learn more about the training details for SageMaker Training Jobs.
-Specifically, users can the following (depending on training job status):
+Specifically, users can learn the following (depending on training job status):
 * Approximations for how long training is expected to take for in-progress jobs
 * Job failure reason
 * Total training time of completed jobs
