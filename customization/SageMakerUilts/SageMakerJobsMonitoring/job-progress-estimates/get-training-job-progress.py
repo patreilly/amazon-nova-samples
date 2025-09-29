@@ -12,7 +12,7 @@ class SageMakerTrainingJobStatus:
         self.sagemaker_client = boto3.client('sagemaker', region_name=region)
         self.logs_client = boto3.client('logs', region_name=region)
 
-    def _calculate_iterations_per_epoch(self, batch_size: int) -> int:
+    def calculate_iterations_per_epoch(self, batch_size: int) -> float:
         """Calculate the number of iterations per epoch based on dataset size and batch size."""
         return self.num_dataset_samples / batch_size
 
@@ -73,7 +73,7 @@ class SageMakerTrainingJobStatus:
             total_epochs = int(response['HyperParameters'].get('epochCount', 2))
 
             # Calculate iterations per epoch
-            iterations_per_epoch = self._calculate_iterations_per_epoch(batch_size)
+            iterations_per_epoch = self.calculate_iterations_per_epoch(batch_size)
             total_iterations = iterations_per_epoch * total_epochs
 
         except (KeyError, ValueError) as e:
@@ -111,7 +111,7 @@ class SageMakerTrainingJobStatus:
         return (f"Training for job {self.job_name} is in progress, but the job progress percentage could not be determined "
                 f"as of {current_time.strftime('%H:%M UTC %m/%d/%Y')}. Try again in a few minutes.")
 
-    def _handle_non_running_job(self, status: str, response: Dict[str, Any]) -> str:
+    def handle_non_running_job(self, status: str, response: Dict[str, Any]) -> str:
         """Handle status reporting for non-running jobs."""
         end_time = response.get('TrainingEndTime', datetime.now(timezone.utc))
         if status == 'Failed':
@@ -136,7 +136,7 @@ class SageMakerTrainingJobStatus:
             return base_message
         return f"Job {self.job_name} is {status} as of {end_time.strftime('%H:%M UTC %m/%d/%Y')}."
 
-    def _handle_in_progress_job(self, secondary_status: str, response: Dict[str, Any]) -> str:
+    def handle_in_progress_job(self, secondary_status: str, response: Dict[str, Any]) -> str:
         """Handle status reporting for in-progress jobs."""
         current_time = datetime.now(timezone.utc)
         if secondary_status == 'Training':
@@ -162,9 +162,9 @@ class SageMakerTrainingJobStatus:
             secondary_status = response.get('SecondaryStatus', 'Unknown')
 
             if status != 'InProgress':
-                return self._handle_non_running_job(status, response)
+                return self.handle_non_running_job(status, response)
 
-            return self._handle_in_progress_job(secondary_status, response)
+            return self.handle_in_progress_job(secondary_status, response)
 
         except Exception as e:
             return f"Unable to retrieve status for job {self.job_name}: {str(e)}"
