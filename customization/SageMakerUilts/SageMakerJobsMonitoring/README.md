@@ -7,7 +7,7 @@ Please visit any of the below links to see instructions for using each of the sc
 - boto3: Run ```pip install boto3```
 ### Usage:
 * To get started, simply clone [this Github repository](https://github.com/aws-samples/amazon-nova-samples/tree/main) and refer to the script details below!
-* Make sure you've refreshed your AWS credentials before running any of scripts in this library.
+* Make sure you've refreshed your AWS credentials before running any of the scripts in this library.
 
 __Please note that these scripts are specifically designed for Nova Customization jobs.__
 
@@ -144,7 +144,7 @@ Specifically, users can learn the following (depending on job status):
 - The **HyperPod CLI** must be installed where you are executing this script. Information on how to install the CLI can be found [here](https://github.com/aws/sagemaker-hyperpod-cli/tree/release_v2).
 - This script only supports HyperPod clusters that are orchestrated by EKS, not Slurm. See [here](https://docs.aws.amazon.com/sagemaker/latest/dg/sagemaker-hyperpod.html) for more details.
 - Because of how HyperPod pushes logs to CloudWatch, it is possible for logs of different jobs to end up in the same log stream - with no way of differentiating between jobs.
-Due to this limitation, the HyperPod script will intentionally exit if it detects that there is more than 1 job currently running for a given cluster.
+Due to this limitation, the HyperPod script will intentionally exit if it detects that there is more than 1 job currently running on a given cluster.
 ### Usage:
 If you want to check the parameters to use, run the following commands:
 ```

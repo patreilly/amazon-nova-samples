@@ -287,7 +287,7 @@ def parse_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description='Check SageMaker HyperPod job progress information for a given HyperPod cluster')
     parser.add_argument('--cluster-name',
                         required=True,
-                        help='Name of the SageMaker HyperPod cluster')
+                        help='The name of the SageMaker HyperPod cluster where your job is running.')
     parser.add_argument('--job-name',
                         required=True,
                         help='The name of the job to check progress of.')
@@ -296,11 +296,11 @@ def parse_arguments() -> argparse.Namespace:
                         help='The Kubernetes namespace that your job is running in.')
     parser.add_argument('--region',
                         required=True,
-                        help='AWS region (ex. us-east-1)')
+                        help='The AWS region (ex. us-east-1).')
     parser.add_argument('--num-dataset-samples',
                         required=True,
                         type=int,
-                        help='Approximate number of samples in your S3 training dataset')
+                        help='The approximate number of samples in your S3 training dataset.')
     parser.add_argument('--num-epochs',
                         required=True,
                         type=int,
