@@ -10,3 +10,4 @@ venv/
 .vscode/
 reports/
 .nova_act/
+src/nova_act_qa_tests.egg-info/

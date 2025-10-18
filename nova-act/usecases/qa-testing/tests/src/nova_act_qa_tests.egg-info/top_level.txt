@@ -1,6 +1,7 @@
 __init__
 config
 conftest
+reports
 test_data
 test_runner
 utils
