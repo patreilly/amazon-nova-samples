@@ -49,7 +49,8 @@ export class StreamSession {
     return this; // For chaining
   }
 
-  public async setupPromptStart(): Promise<void> {
+  public async setupSessionAndPromptStart(): Promise<void> {
+    this.client.setupSessionStartEvent(this.sessionId);
     this.client.setupPromptStartEvent(this.sessionId);
   }
 
@@ -257,7 +258,7 @@ export class NovaSonicBidirectionalStreamClient {
     const kbClient = new BedrockKnowledgeBaseClient();
 
     // Replace with your actual Knowledge Base ID
-    const KNOWLEDGE_BASE_ID = 'KB_ID';
+    const KNOWLEDGE_BASE_ID = 'TZN7QB6GFH';
 
     try {
       console.log(`Searching for: "${query}"`);
@@ -301,15 +302,13 @@ export class NovaSonicBidirectionalStreamClient {
   }
 
   // Stream audio for a specific session
-  public async initiateSession(sessionId: string): Promise<void> {
+  public async initiateBidirectionalStreaming(sessionId: string): Promise<void> {
     const session = this.activeSessions.get(sessionId);
     if (!session) {
       throw new Error(`Stream session ${sessionId} not found`);
     }
 
     try {
-      // Set up initial events for this session
-      this.setupSessionStartEvent(sessionId);
 
       // Create the bidirectional stream with session-specific async iterator
       const asyncIterable = this.createSessionAsyncIterable(sessionId);
@@ -411,7 +410,7 @@ export class NovaSonicBidirectionalStreamClient {
                     if (error.message === "Stream closed" || !session.isActive) {
                       // This is an expected condition when closing the session
                       if (this.activeSessions.has(sessionId)) {
-                        console.log(`Session \${ sessionId } closed during wait`);
+                        console.log(`Session ${ sessionId } closed during wait`);
                       }
                       return { value: undefined, done: true };
                     }
@@ -582,7 +581,7 @@ export class NovaSonicBidirectionalStreamClient {
 
 
   // Set up initial events for a session
-  private setupSessionStartEvent(sessionId: string): void {
+  public setupSessionStartEvent(sessionId: string): void {
     console.log(`Setting up initial events for session ${sessionId}...`);
     const session = this.activeSessions.get(sessionId);
     if (!session) return;
@@ -648,7 +647,7 @@ export class NovaSonicBidirectionalStreamClient {
           promptName: session.promptName,
           contentName: textPromptID,
           type: "TEXT",
-          interactive: true,
+          interactive: false,
           role: "SYSTEM",
           textInputConfiguration: textConfig,
         },

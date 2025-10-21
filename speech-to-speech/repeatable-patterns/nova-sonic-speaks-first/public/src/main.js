@@ -40,7 +40,8 @@ let initialAudioSent = false;
 let initialAudioData = null;
 let initialAudioChunkSize = 512; // Size of chunks to send initial audio in
 let initialMessageShown = false;
-
+let manualDisconnect = false;
+let sessionInitialized = false;
 
 let samplingRatio = 1;
 const TARGET_SAMPLE_RATE = 16000; 
@@ -72,7 +73,7 @@ async function loadInitialAudio() {
 // Initialize WebSocket audio
 async function initAudio() {
     try {
-        statusElement.textContent = "Initializing...";
+        statusElement.textContent = "Requesting microphone access...";
         statusElement.className = "connecting";
 
         // Load initial audio file
@@ -102,11 +103,11 @@ async function initAudio() {
         
         await audioPlayer.start();
 
-        statusElement.textContent = "Ready. Click Start to begin.";
+        statusElement.textContent = "Microphone ready. Click Start to begin.";
         statusElement.className = "ready";
         startButton.disabled = false;
     } catch (error) {
-        console.error("Error during initialization:", error);
+        console.error("Error accessing microphone:", error);
         statusElement.textContent = "Error: " + error.message;
         statusElement.className = "error";
     }
@@ -114,18 +115,35 @@ async function initAudio() {
 
 // Initialize the session with Bedrock
 async function initializeSession() {
+    if (sessionInitialized) return;
+
     statusElement.textContent = "Initializing session...";
 
     try {
+        // Wait for server acknowledgment before proceeding
+        await new Promise((resolve, reject) => {
+            const timeout = setTimeout(() => reject(new Error('Connection timeout')), 5000);
+            
+            socket.emit('initializeConnection', (ack) => {
+                clearTimeout(timeout);
+                if (ack?.success) resolve();
+                else reject(new Error(ack?.error || 'Connection failed'));
+            });
+        });
+
         // Send events in sequence
         socket.emit('promptStart');
         socket.emit('systemPrompt', SYSTEM_PROMPT);
         socket.emit('audioStart');
+
+        // Mark session as initialized
+        sessionInitialized = true;
         statusElement.textContent = "Session initialized successfully";
     } catch (error) {
         console.error("Failed to initialize session:", error);
         statusElement.textContent = "Error initializing session";
         statusElement.className = "error";
+        throw error;
     }
 }
 
@@ -178,8 +196,28 @@ async function startStreaming() {
             sourceNode = null;
         }
 
-        // Initialize a brand new session
-        await initializeSession();
+         // Reconnect if disconnected
+        if (!socket.connected) {
+            socket.connect();
+            // Wait for connection
+            await new Promise((resolve) => {
+                if (socket.connected) {
+                    resolve();
+                } else {
+                    socket.once('connect', resolve);
+                }
+            });
+        }
+
+        // Restart audioPlayer if needed
+        if (!audioPlayer.initialized) {
+            await audioPlayer.start();
+        }
+
+        // First, make sure the session is initialized
+        if (!sessionInitialized) {
+            await initializeSession();
+        }
 
         isStreaming = true;
         startButton.disabled = true;
@@ -227,6 +265,11 @@ async function startStreaming() {
             sourceNode.connect(processor);
             processor.connect(audioContext.destination);
         }
+        isStreaming = true;
+        startButton.disabled = true;
+        stopButton.disabled = false;
+        statusElement.textContent = "Streaming... Speak now";
+        statusElement.className = "recording";
 
     } catch (error) {
         console.error("Error starting streaming:", error);
@@ -280,13 +323,25 @@ function stopStreaming() {
     stopButton.disabled = true;
     statusElement.textContent = "Processing...";
     statusElement.className = "processing";
-
+    
+    audioPlayer.bargeIn();
     // Tell server to finalize processing
     socket.emit('stopAudio');
 
     // End the current turn in chat history
     chatHistoryManager.endTurn();
-}
+
+    // Reset session for new connection
+    sessionInitialized = false;
+    
+    // Mark as manual disconnect
+    manualDisconnect = true;
+    
+    // Disconnect from server to end current session
+    socket.disconnect();
+    
+    statusElement.textContent = "Stopped. Click Start to begin new session.";
+    statusElement.className = "ready";}
 
 // Base64 to Float32Array conversion
 function base64ToFloat32Array(base64String) {
@@ -580,7 +635,10 @@ socket.on('contentEnd', (data) => {
 // Stream completion event
 socket.on('streamComplete', () => {
     console.log('Stream complete received from server');
-    statusElement.textContent = "Ready";
+     if (isStreaming) {
+        stopStreaming();
+    }
+    statusElement.textContent = "Microphone ready. Click Start to begin.";
     statusElement.className = "ready";
     startButton.disabled = false; // Re-enable start button now that cleanup is complete
     hideUserThinkingIndicator();
@@ -590,15 +648,27 @@ socket.on('streamComplete', () => {
 socket.on('connect', () => {
     statusElement.textContent = "Connected to server";
     statusElement.className = "connected";
+    sessionInitialized = false;
     initialAudioSent = false;
     initialMessageShown = false;
 });
 
-socket.on('disconnect', () => {
-    statusElement.textContent = "Disconnected from server";
-    statusElement.className = "disconnected";
-    startButton.disabled = true;
-    stopButton.disabled = true;
+socket.on('disconnect', () => { 
+    if (manualDisconnect) {
+        // Manual disconnect - keep buttons enabled for restart
+        manualDisconnect = false;
+        statusElement.textContent = "Stopped. Click Start to begin new session.";
+        statusElement.className = "ready";
+        startButton.disabled = false;
+        stopButton.disabled = true;
+    } else {
+        // Unexpected disconnect - disable buttons
+        statusElement.textContent = "Disconnected from server";
+        statusElement.className = "disconnected";
+        startButton.disabled = true;
+        stopButton.disabled = true;
+    }
+    sessionInitialized = false;
     initialAudioSent = false;
     hideUserThinkingIndicator();
     hideAssistantThinkingIndicator();

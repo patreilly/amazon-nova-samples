@@ -44,7 +44,7 @@ async function main() {
         // Create a session for this streaming operation with unique ID
         const sessionId = `cli-session-${Date.now()}`;
         const session = s2sClient.createStreamSession(sessionId);
-        s2sClient.initiateSession(sessionId);
+        s2sClient.initiateBidirectionalStreaming(sessionId);
 
         // Track output data
         let transcription = '';
@@ -138,7 +138,7 @@ async function main() {
         console.log('Starting event sequence: Prompt Start -> System Prompt -> Audio Start');
 
         // Setting up the initial events in sequence
-        await session.setupPromptStart();
+        await session.setupSessionAndPromptStart();
         console.log("Prompt start event sent");
 
         await session.setupSystemPrompt();

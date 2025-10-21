@@ -50,7 +50,8 @@ export class StreamSession {
     return this; // For chaining
   }
 
-  public async setupPromptStart(): Promise<void> {
+  public async setupSessionAndPromptStart(): Promise<void> {
+    this.client.setupSessionStartEvent(this.sessionId);
     this.client.setupPromptStartEvent(this.sessionId);
   }
 
@@ -260,15 +261,13 @@ export class NovaSonicBidirectionalStreamClient {
   }
 
   // Stream audio for a specific session
-  public async initiateSession(sessionId: string): Promise<void> {
+  public async initiateBidirectionalStreaming(sessionId: string): Promise<void> {
     const session = this.activeSessions.get(sessionId);
     if (!session) {
       throw new Error(`Stream session ${sessionId} not found`);
     }
 
     try {
-      // Set up initial events for this session
-      this.setupSessionStartEvent(sessionId);
 
       // Create the bidirectional stream with session-specific async iterator
       const asyncIterable = this.createSessionAsyncIterable(sessionId);
@@ -481,7 +480,8 @@ export class NovaSonicBidirectionalStreamClient {
                 });
               } else if (jsonResponse.event?.contentEnd) {
                 this.dispatchEvent(sessionId, 'contentEnd', jsonResponse.event.contentEnd);
-              } else {
+              }
+              else {
                 // Handle other events
                 const eventKeys = Object.keys(jsonResponse.event || {});
                 console.log(`Event keys for session ${sessionId}: `, eventKeys)
@@ -540,7 +540,7 @@ export class NovaSonicBidirectionalStreamClient {
 
 
   // Set up initial events for a session
-  private setupSessionStartEvent(sessionId: string): void {
+  public setupSessionStartEvent(sessionId: string): void {
     console.log(`Setting up initial events for session ${sessionId}...`);
     const session = this.activeSessions.get(sessionId);
     if (!session) return;

@@ -1,0 +1,134 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'Resources for monitoring SageMaker training job status changes'
+
+Parameters:
+  EmailAddress:
+    Type: String
+    Description: Email address(es) to receive job status notifications
+    AllowedPattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}(,[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})*$'
+    ConstraintDescription: Each email must be in the format email1@domain.com.
+
+Resources:
+  NotificationTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      TopicName: sagemaker-training-job-status-change-notifications
+      DisplayName: SageMaker Training Job Status Change
+
+  NotificationTopicPolicy:
+    Type: AWS::SNS::TopicPolicy
+    Properties:
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: events.amazonaws.com
+            Action: sns:Publish
+            Resource: !Ref NotificationTopic
+      Topics:
+        - !Ref NotificationTopic
+
+  SMTJLambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: sm-tj-email-subscription-lambda-role
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: SMTJSubscribeToSNSNotifications
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - sns:Subscribe
+                  - sns:Unsubscribe
+                Resource: !Sub 'arn:aws:sns:${AWS::Region}:${AWS::AccountId}:*'
+
+  SMTJEmailSubscriptionLambda:
+    Type: AWS::Lambda::Function
+    Properties:
+      FunctionName: sm-tj-subscription-lambda
+      Handler: index.lambda_handler
+      Role: !GetAtt SMTJLambdaExecutionRole.Arn
+      Runtime: python3.13
+      Timeout: 15
+      Code:
+        ZipFile: |
+          import boto3
+          import cfnresponse
+          
+          sns_client = boto3.client('sns')
+          
+          def lambda_handler(event, context):
+              try:
+                  if event['RequestType'] in ['Create', 'Update']:
+                      emails = event['ResourceProperties']['EmailAddress'].split(',')
+                      topic_arn = event['ResourceProperties']['TopicArn']
+
+                      for email in emails:
+                          response = sns_client.subscribe(
+                              TopicArn=topic_arn,
+                              Protocol='email',
+                              Endpoint=email.strip()
+                          )
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+          
+                  elif event['RequestType'] == 'Delete':
+                      # Have to still send a cfn response so it doesn't get stuck in a waiting state.
+                      cfnresponse.send(event, context, cfnresponse.SUCCESS, {})
+          
+              except Exception as e:
+                  print(e)
+                  cfnresponse.send(event, context, cfnresponse.FAILED, {})
+
+  SMTJEmailSubscriptionCustomResource:
+    Type: Custom::EmailSubscription
+    Properties:
+      ServiceToken: !GetAtt SMTJEmailSubscriptionLambda.Arn
+      EmailAddress: !Ref EmailAddress
+      TopicArn: !Ref NotificationTopic
+
+  SageMakerTrainingRule:
+    Type: AWS::Events::Rule
+    Properties:
+      Name: sagemaker-training-job-status-change-rule
+      Description: 'Rule to monitor SageMaker training job status changes'
+      EventPattern:
+        source:
+          - aws.sagemaker
+        detail-type:
+          - SageMaker Training Job State Change
+        detail:
+          TrainingJobStatus:
+            - "Failed"
+            - "Completed"
+            - "Stopped"
+      State: ENABLED
+      Targets:
+        - Arn: !Ref NotificationTopic
+          Id: NotificationTarget
+          InputTransformer:
+            InputPathsMap:
+              time: "$.time"
+              account: "$.account"
+              name: "$.detail.TrainingJobName"
+              status: "$.detail.TrainingJobStatus"
+            InputTemplate: |
+              "Training job <name> status has changed to <status> at <time> in account <account>"
+
+Outputs:
+  TopicArn:
+    Description: 'ARN of the SNS Topic'
+    Value: !Ref NotificationTopic
+  RuleName:
+    Description: 'Name of the EventBridge Rule'
+    Value: !Ref SageMakerTrainingRule
