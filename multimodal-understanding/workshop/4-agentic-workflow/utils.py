@@ -6,23 +6,25 @@ import logging
 import pprint
 from io import BytesIO
 import pandas as pd
+import os
 
+region = os.environ['AWS_REGION']
+session = boto3.session.Session(region_name=region)
 
-iam_client = boto3.client('iam')
-sts_client = boto3.client('sts')
-session = boto3.session.Session()
-region = sts_client.meta.region_name
+iam_client = session.client('iam')
+sts_client = session.client('sts')
 account_id = sts_client.get_caller_identity()["Account"]
-dynamodb_client = boto3.client('dynamodb')
-dynamodb_resource = boto3.resource('dynamodb')
-lambda_client = boto3.client('lambda')
+dynamodb_client = session.client('dynamodb')
+dynamodb_resource = session.resource('dynamodb')
+lambda_client = session.client('lambda')
 bedrock_agent_client = session.client('bedrock-agent')
-bedrock_agent_runtime_client = boto3.client('bedrock-agent-runtime')
+bedrock_agent_runtime_client = session.client('bedrock-agent-runtime')
 
 
 logging.basicConfig(format='[%(asctime)s] p%(process)s {%(filename)s:%(lineno)d} %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+logger.info(f"Using region {region} for this workshop")
 
 # Helper function to retrieve all bookings from DynamoDB
 def selectAllFromDynamodb(table_name):
@@ -318,6 +320,8 @@ def create_agent_role(agent_name, agent_foundation_model, kb_id=None):
 def create_agent_core_execution_role(agent_name, dynamodb_table_name):
     agent_core_policy_name = f"{agent_name}-agentcore-policy"
     agent_core_role_name = f'AgentCoreExecutionRole_{agent_name}'
+
+    # logger.info(f"Using region {region}")
     
     # Create IAM policy for agent core
     agent_core_policy = {

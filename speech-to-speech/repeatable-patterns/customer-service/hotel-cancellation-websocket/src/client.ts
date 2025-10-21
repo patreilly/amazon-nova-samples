@@ -50,7 +50,8 @@ export class StreamSession {
     return this; // For chaining
   }
 
-  public async setupPromptStart(): Promise<void> {
+  public async setupSessionAndPromptStart(): Promise<void> {
+    this.client.setupSessionStartEvent(this.sessionId);
     this.client.setupPromptStartEvent(this.sessionId);
   }
 
@@ -160,7 +161,7 @@ export class NovaSonicBidirectionalStreamClient {
 
 
   constructor(config: NovaSonicBidirectionalStreamClientConfig) {
-    const nodeHttp2Handler = new NodeHttp2Handler({
+    const http2Client = new NodeHttp2Handler({
       requestTimeout: 300000,
       sessionTimeout: 300000,
       disableConcurrentStreams: false,
@@ -176,7 +177,7 @@ export class NovaSonicBidirectionalStreamClient {
       ...config.clientConfig,
       credentials: config.clientConfig.credentials,
       region: config.clientConfig.region || "us-east-1",
-      requestHandler: nodeHttp2Handler
+      requestHandler: http2Client
     });
 
     this.inferenceConfig = config.inferenceConfig ?? {
@@ -253,15 +254,13 @@ export class NovaSonicBidirectionalStreamClient {
   }
 
   // Stream audio for a specific session
-  public async initiateSession(sessionId: string): Promise<void> {
+  public async initiateBidirectionalStreaming(sessionId: string): Promise<void> {
     const session = this.activeSessions.get(sessionId);
     if (!session) {
       throw new Error(`Stream session ${sessionId} not found`);
     }
 
     try {
-      // Set up initial events for this session
-      this.setupSessionStartEvent(sessionId);
 
       // Create the bidirectional stream with session-specific async iterator
       const asyncIterable = this.createSessionAsyncIterable(sessionId);
@@ -363,7 +362,7 @@ export class NovaSonicBidirectionalStreamClient {
                     if (error.message === "Stream closed" || !session.isActive) {
                       // This is an expected condition when closing the session
                       if (this.activeSessions.has(sessionId)) {
-                        console.log(`Session \${ sessionId } closed during wait`);
+                        console.log(`Session ${ sessionId } closed during wait`);
                       }
                       return { value: undefined, done: true };
                     }
@@ -384,7 +383,7 @@ export class NovaSonicBidirectionalStreamClient {
               const nextEvent = session.queue.shift();
               eventCount++;
 
-              console.log(`Sending event #${eventCount} for session ${sessionId}: ${JSON.stringify(nextEvent).substring(0, 100)}...`);
+              //console.log(`Sending event #${ eventCount } for session ${ sessionId }: ${ JSON.stringify(nextEvent).substring(0, 100) }...`);
 
               return {
                 value: {
@@ -474,7 +473,8 @@ export class NovaSonicBidirectionalStreamClient {
                 });
               } else if (jsonResponse.event?.contentEnd) {
                 this.dispatchEvent(sessionId, 'contentEnd', jsonResponse.event.contentEnd);
-              } else {
+              }
+              else {
                 // Handle other events
                 const eventKeys = Object.keys(jsonResponse.event || {});
                 console.log(`Event keys for session ${sessionId}: `, eventKeys)
@@ -533,7 +533,7 @@ export class NovaSonicBidirectionalStreamClient {
 
 
   // Set up initial events for a session
-  private setupSessionStartEvent(sessionId: string): void {
+  public setupSessionStartEvent(sessionId: string): void {
     console.log(`Setting up initial events for session ${sessionId}...`);
     const session = this.activeSessions.get(sessionId);
     if (!session) return;

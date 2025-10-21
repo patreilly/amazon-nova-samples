@@ -6,8 +6,8 @@ import uuid
 import pyaudio
 from aws_sdk_bedrock_runtime.client import BedrockRuntimeClient, InvokeModelWithBidirectionalStreamOperationInput
 from aws_sdk_bedrock_runtime.models import InvokeModelWithBidirectionalStreamInputChunk, BidirectionalInputPayloadPart
-from aws_sdk_bedrock_runtime.config import Config, HTTPAuthSchemeResolver, SigV4AuthScheme
-from smithy_aws_core.credentials_resolvers.environment import EnvironmentCredentialsResolver
+from aws_sdk_bedrock_runtime.config import Config
+from smithy_aws_core.identity.environment import EnvironmentCredentialsResolver
 
 # Audio configuration
 INPUT_SAMPLE_RATE = 16000
@@ -37,8 +37,6 @@ class SimpleNovaSonic:
             endpoint_uri=f"https://bedrock-runtime.{self.region}.amazonaws.com",
             region=self.region,
             aws_credentials_identity_resolver=EnvironmentCredentialsResolver(),
-            http_auth_scheme_resolver=HTTPAuthSchemeResolver(),
-            http_auth_schemes={"aws.auth#sigv4": SigV4AuthScheme()}
         )
         self.client = BedrockRuntimeClient(config=config)
     

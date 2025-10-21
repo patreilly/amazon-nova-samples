@@ -44,8 +44,8 @@ const mockReservations: Reservation[] = [
     {
         reservationId: "RES-12345",
         name: "Angela Park",
-        checkInDate: "2025-04-12",
-        checkOutDate: "2025-04-15",
+        checkInDate: "2026-04-12",
+        checkOutDate: "2026-04-15",
         hotelName: "Seaview Hotel",
         roomType: "Deluxe Ocean View",
         totalCost: 750.00,
@@ -55,8 +55,8 @@ const mockReservations: Reservation[] = [
     {
         reservationId: "RES-23456",
         name: "Don Smith",
-        checkInDate: "2025-05-15",
-        checkOutDate: "2025-05-20",
+        checkInDate: "2026-05-15",
+        checkOutDate: "2026-05-20",
         hotelName: "Mountain Lodge",
         roomType: "Standard King",
         totalCost: 850.00,
@@ -66,8 +66,8 @@ const mockReservations: Reservation[] = [
     {
         reservationId: "RES-34567",
         name: "Maria Rodriguez",
-        checkInDate: "2025-06-10",
-        checkOutDate: "2025-06-14",
+        checkInDate: "2026-06-10",
+        checkOutDate: "2026-06-14",
         hotelName: "City Central Hotel",
         roomType: "Executive Suite",
         totalCost: 1200.00,
@@ -79,26 +79,26 @@ const mockReservations: Reservation[] = [
 const mockCancellationPolicies: { [key: string]: CancellationPolicy } = {
     "RES-12345": {
         reservationId: "RES-12345",
-        freeCancellationUntil: "2025-04-05", // 7 days before check-in
-        partialRefundUntil: "2025-04-10", // 2 days before check-in
+        freeCancellationUntil: "2026-04-05", // 7 days before check-in
+        partialRefundUntil: "2026-04-10", // 2 days before check-in
         partialRefundPercentage: 50,
-        noRefundAfter: "2025-04-10",
+        noRefundAfter: "2026-04-10",
         additionalNotes: null,
     },
     "RES-23456": {
         reservationId: "RES-23456",
-        freeCancellationUntil: "2025-05-10", // 5 days before check-in
-        partialRefundUntil: "2025-05-14", // 1 day before check-in
+        freeCancellationUntil: "2026-05-10", // 5 days before check-in
+        partialRefundUntil: "2026-05-14", // 1 day before check-in
         partialRefundPercentage: 30,
-        noRefundAfter: "2025-01-14",
+        noRefundAfter: "2026-01-14",
         additionalNotes: "Non-refundable deposit of $100 applies to all cancellations",
     },
     "RES-34567": {
         reservationId: "RES-34567",
         freeCancellationUntil: null, // No free cancellation
-        partialRefundUntil: "2025-06-03", // 7 days before check-in
+        partialRefundUntil: "2026-06-03", // 7 days before check-in
         partialRefundPercentage: 25,
-        noRefundAfter: "2025-06-03",
+        noRefundAfter: "2026-06-03",
         additionalNotes: "Special event rate with limited cancellation options",
     }
 };
