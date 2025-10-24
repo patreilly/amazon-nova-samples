@@ -1,120 +1,97 @@
-# Agentic QA Automation Demo: Retail Application Testing
+# QA testing using Amazon Nova Act
+
 
 This project demonstrates agentic quality assurance (QA) automation using Amazon Bedrock AgentCore Browser and Amazon Nova Act. It showcases how AI-powered testing agents can automatically validate web applications through intelligent browser interactions, replacing traditional manual testing processes with scalable, automated solutions.
 
-## Use Case Overview
+## Overview
 
-This demonstration implements a complete agentic QA workflow for a mock retail web application, illustrating how organizations can transform their testing processes from manual, time-intensive operations to automated, AI-driven validation systems.
+This demonstration implements a complete agentic QA workflow for a mock retail web application, showing how organizations can transform their testing processes from manual operations to automated, AI-driven validation systems.
 
-### What This Demo Shows
-
-- **AI-Generated Test Cases**: Automatic creation of comprehensive test scenarios by analyzing application code and functionality
-- **Intelligent Test Execution**: AI agents that can understand web interfaces and perform complex user interactions
-- **Parallel Test Processing**: Scalable execution across multiple isolated browser sessions
-- **Enterprise Integration**: AWS-native architecture with proper resource management and reporting
-
-### Key Benefits Demonstrated
+### Key Benefits
 
 - **80% Reduction in Manual Testing**: Automated validation of critical user journeys
 - **Comprehensive Coverage**: AI-generated tests cover edge cases often missed in manual testing
 - **Scalable Architecture**: Parallel execution reduces testing time from hours to minutes
 - **Enterprise-Ready**: Built on AWS infrastructure with proper security and resource management
 
-## Architecture Overview
+## Architecture
 
 The demo consists of three main components:
 
 1. **Sample Retail Web Application**: A fully functional e-commerce site with product catalog, search, filtering, and user interactions
-2. **AI Test Generation**: Automated creation of test cases using AI analysis of application features
+2. **AI Test Generation**: Automated creation of test cases using Amazon Kiro or Amazon Q CLI
 3. **Agentic Test Execution**: Amazon Nova Act agents performing tests through Amazon Bedrock AgentCore Browser
 
 ## Prerequisites
-
 Before deploying this demo, ensure you have:
-
 ### AWS Requirements
 - **AWS CLI configured** with appropriate permissions
-- **AWS account** with access to:
-  - Amazon Bedrock AgentCore Browser
-  - Amazon CloudFormation
-  - Amazon CloudFront
-  - Amazon S3
+- **AWS account** with access to Amazon Bedrock AgentCore Browser, CloudFormation, CloudFront, and S3
 - **IAM permissions** for creating and managing AWS resources
 
 ### Development Environment
 - **Python 3.11 or higher**
-- **pip 23.0 or higher**
-- **Node.js 18+ and npm** (for web application)
+- **Node.js 18+ and npm**
 - **jq** (for JSON parsing in deployment scripts)
-- **Operating System Support**:
-  - macOS (Sierra or later)
-  - Ubuntu (22.04 LTS or later)
-  - Windows 10+ with WSL2
 
 ### API Access
-- **Amazon Nova Act API Key**
-  - Visit [Nova Act home page](https://nova.amazon.com/act) to generate your API key
-  - Required for AI-powered test execution
+- **Amazon Nova Act API Key** - Visit [Nova Act home page](https://nova.amazon.com/act) to generate your API key
 
-## Deployment Steps
+## Getting Started
 
-### Step 1: Clone Repository
+Follow these three main steps to deploy and test the application:
+
+### Step 1: Deploy Infrastructure
+
+First, configure your AWS CLI and deploy the complete infrastructure:
 
 ```bash
 # Clone the repository
 git clone <repository-url>
 cd qa-testing-acbt-nova-act
-```
 
-### Step 2: Deploy Complete Infrastructure
+# Configure AWS CLI (if not already done)
+aws configure
 
-Use the automated deployment script that creates the CloudFormation stack and uploads all application files:
-
-```bash
-# Navigate to scripts directory
+# Navigate to scripts directory and deploy
 cd scripts
-
-# Run the complete deployment script
-./fix-deployment.sh
+./deployment.sh
 ```
 
 **What this script does:**
-- Creates a CloudFormation stack with S3 bucket and CloudFront distribution
-- Uploads all web application files to the S3 bucket
-- Configures proper permissions and security settings
-- Creates CloudFront invalidation for immediate availability
+- Creates CloudFormation stack with S3 bucket and CloudFront distribution
+- Uploads all web application files to S3
+- Configures security settings and permissions
 - Provides the final application URL
 
-### Step 3: Verify Deployment
-
-After the script completes, you'll receive:
-- **S3 Bucket Name**: Where your files are stored
-- **CloudFront Distribution ID**: For cache management
+After deployment completes, you'll receive:
 - **Website URL**: Your deployed application URL
+- **S3 Bucket Name**: Where files are stored
+- **CloudFront Distribution ID**: For cache management
 
-Access the provided URL to verify:
-- Homepage loads with product catalog
-- Search functionality works
-- Product filtering operates correctly
-- Navigation between pages functions properly
+### Step 2: Generate Test Cases
 
-### Alternative: Update Existing Deployment
+Use Amazon Kiro or Amazon Q CLI to analyze the deployed application and generate comprehensive test cases:
 
-If you need to update an existing deployment:
+**Option A: Using Amazon Kiro**
+1. Open Amazon Kiro
+2. Use the prompt: `"Analyze the QA testing demo application and create comprehensive test cases"`
+3. Kiro will generate test scenarios covering all major functionality
 
+![Kiro Test Generation Demo](assets/Kiro.gif)
+*Amazon Kiro analyzing the application and generating comprehensive QA test cases*
+
+**Option B: Using Amazon Q CLI**
 ```bash
-# Navigate to scripts directory
-cd scripts
-
-# Update existing stack (safer than recreating)
-./update-stack.sh
+# Use Amazon Q CLI to analyze and generate test cases
+q "Analyze this web application and create comprehensive QA test cases"
 ```
 
-## Writing and Running Tests
+**Sample test cases are already included** in the `qa-test-cases/` directory for reference.
 
-Once the web application is deployed and accessible, you can create and execute agentic QA tests using the Amazon Nova Act framework.
+### Step 3: Run Pytest
 
-### Quick Test Setup
+Execute the AI-generated tests using the pytest framework:
 
 ```bash
 # Navigate to tests directory
@@ -130,11 +107,30 @@ pip install .
 # Configure environment
 cp .env.sample .env
 # Edit .env with your deployed application URL and Nova Act API key
+
+# Copy test cases to working directory
+src/test_data/
+
+# Run tests
+pytest -v
+
+# View HTML report
+open reports/report.html
 ```
 
-### Writing Tests
+![Pytest Execution Demo](assets/pytest.gif)
+*Pytest running the AI-generated test cases with Amazon Nova Act agents*
 
-Tests are written in simple JSON format and stored in `tests/src/test_data/`. Each JSON file represents one test case:
+## Test Framework Features
+
+- **AI-Powered Execution**: Tests executed by Amazon Nova Act agents that understand web interfaces
+- **Parallel Processing**: Multiple tests run simultaneously in isolated browser sessions
+- **Rich Reporting**: HTML reports include screenshots, logs, and execution details
+- **JSON-Based**: No coding required - write tests in simple JSON format
+
+### Writing Custom Tests
+
+Tests are written in JSON format. Example test case:
 
 ```json
 {
@@ -156,85 +152,44 @@ Tests are written in simple JSON format and stored in `tests/src/test_data/`. Ea
 }
 ```
 
-### Running Tests
-
-```bash
-# Run all tests
-pytest
-
-# Run with verbose output
-pytest -v
-
-# Run specific test
-pytest -k "homepage"
-
-# View HTML report
-open reports/report.html
-```
-
-### Test Framework Features
-
-- **AI-Powered Execution**: Tests are executed by Amazon Nova Act agents that understand web interfaces
-- **Parallel Processing**: Multiple tests run simultaneously in isolated browser sessions
-- **Rich Reporting**: HTML reports include screenshots, logs, and execution details
-- **JSON-Based**: No coding required - write tests in simple JSON format
-
-**For comprehensive documentation on test writing, execution, and advanced features, see the [Tests README](tests/README.md).**
-
-The tests directory contains:
-- Complete test framework setup instructions
-- Detailed guide for writing JSON-based test cases
-- Test execution and reporting documentation
-- Advanced configuration options
-- Troubleshooting guides
-
 ## Project Structure
 
 ```
 qa-testing-acbt-nova-act/
-├── README.md                    # This file - deployment and setup
-├── cloudformation-simple.yaml  # AWS infrastructure template
-├── package.json                # Web application dependencies
+├── README.md                    # This file
+├── cloudformation-template.yaml # AWS infrastructure template
 ├── index.html                  # Main application file
 ├── app.js                      # Application logic
-├── server.js                   # Local development server
 ├── styles.css                  # Application styling
+├── package.json                # Dependencies
 ├── images/                     # Product images
-├── scripts/                    # Deployment automation scripts
-│   ├── fix-deployment.sh       # Complete deployment (creates stack + uploads files)
+├── assets/                     # Documentation assets
+├── qa-test-cases/              # Sample AI-generated test cases
+├── scripts/                    # Deployment scripts
+│   ├── deployment.sh           # Complete deployment
 │   ├── update-stack.sh         # Update existing stack
-│   ├── invalidate-cloudfront.sh # Cache invalidation only
-│   └── README.md               # Detailed script documentation
-└── tests/                      # Test framework and execution
-    ├── README.md               # Test writing and execution guide
+│   └── README.md               # Script documentation
+└── tests/                      # Test framework
+    ├── README.md               # Detailed test documentation
     ├── pyproject.toml          # Python dependencies
-    ├── conftest.py             # Test configuration
-    └── src/                    # Test framework source code
+    └── src/test_data/          # Working test cases directory
 ```
 
-## Deployment Scripts Reference
+## Deployment Scripts
 
-### `fix-deployment.sh` - Complete Deployment
-- **Use when**: First-time deployment or complete recreation needed
-- **What it does**: Deletes existing stack (if any), creates new stack, uploads files
+### `deployment.sh` - Complete Deployment
+- **Use for**: First-time deployment or complete recreation
+- **Creates**: New CloudFormation stack and uploads all files
 - **Time**: ~10-15 minutes
-- **Output**: Complete working application
 
 ### `update-stack.sh` - Safe Updates
-- **Use when**: Updating CloudFormation template or configuration
-- **What it does**: Creates change set, shows preview, applies updates
+- **Use for**: Updating CloudFormation template or configuration
+- **Updates**: Infrastructure only (files not re-uploaded)
 - **Time**: ~5-10 minutes
-- **Output**: Updated infrastructure (files not re-uploaded)
-
-### `invalidate-cloudfront.sh` - Cache Management
-- **Use when**: Files changed but infrastructure unchanged
-- **What it does**: Invalidates CloudFront cache only
-- **Time**: ~1-2 minutes (effect takes 10-15 minutes)
-- **Output**: Fresh cache for updated content
 
 ## Troubleshooting
 
-### Common Deployment Issues
+### Common Issues
 
 1. **Script Permission Denied**
    ```bash
@@ -244,51 +199,27 @@ qa-testing-acbt-nova-act/
 2. **AWS CLI Not Configured**
    ```bash
    aws configure
-   # Enter your AWS credentials and region
    ```
 
 3. **Missing jq Command**
    ```bash
-   # macOS
-   brew install jq
-   
-   # Ubuntu/Debian
-   sudo apt-get install jq
-   
-   # Windows (WSL)
-   sudo apt-get install jq
+   # macOS: brew install jq
+   # Ubuntu: sudo apt-get install jq
    ```
 
-4. **CloudFormation Stack Creation Fails**
-   - Verify AWS credentials and permissions
-   - Check region availability for required services
-   - Ensure unique S3 bucket naming (script handles this automatically)
-
-5. **Application Not Loading After Deployment**
-   - Wait 10-15 minutes for CloudFront distribution to fully deploy
-   - Check the provided URL is being accessed (not the S3 URL)
-   - Verify files were uploaded correctly to S3
-
-### Getting Help
-
-- Review script output for specific error messages
-- Check AWS CloudFormation console for stack events
-- Verify CloudFront distribution status in AWS Console
-- Consult the [Scripts README](scripts/README.md) for detailed script documentation
-- Check the [Tests README](tests/README.md) for test-specific issues
+4. **Application Not Loading**
+   - Wait 10-15 minutes for CloudFront distribution deployment
+   - Verify you're using the CloudFront URL (not S3 URL)
 
 ## Cost Considerations
 
-- **S3 Storage**: Minimal cost for static files (~$0.01/month)
+- **S3 Storage**: ~$0.01/month for static files
 - **CloudFront**: Free tier includes 1TB data transfer
-- **CloudFormation**: No additional charges
 - **Bedrock AgentCore Browser**: Pay-per-use during testing
 
 ## Additional Resources
 
-- [Amazon Bedrock AgentCore Browser Documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/browser-tool.html)
 - [Amazon Nova Act](https://nova.amazon.com/act)
-- [AWS CloudFormation User Guide](https://docs.aws.amazon.com/cloudformation/)
-- [Amazon CloudFront Developer Guide](https://docs.aws.amazon.com/cloudfront/)
+- [Amazon Bedrock AgentCore Browser Documentation](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/browser-tool.html)
 - [Scripts Documentation](scripts/README.md)
 - [Tests Documentation](tests/README.md)

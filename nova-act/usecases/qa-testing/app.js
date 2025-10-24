@@ -116,8 +116,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const placeholder = document.createElement('div');
             placeholder.className = 'product-image-placeholder';
             placeholder.style.backgroundColor = bgColor;
-            // semgrep:skip=javascript.browser.security.insecure-user-controlled-data-in-methods-like-innerhtml: Using controlled data from product title first character only
-            placeholder.innerHTML = `<div class="product-image-icon">${product.title.charAt(0)}</div>`;
+            
+            // Create icon element safely without innerHTML to prevent XSS
+            const iconDiv = document.createElement('div');
+            iconDiv.className = 'product-image-icon';
+            iconDiv.textContent = product.title.charAt(0);
+            placeholder.appendChild(iconDiv);
+            
             placeholder.setAttribute('aria-label', `${product.title} image`);
             imageDiv.appendChild(placeholder);
         }
@@ -155,7 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < fullStars; i++) {
             const star = document.createElement('span');
             star.className = 'star full';
-            star.innerHTML = '★';
+            star.textContent = '★';
             starsContainer.appendChild(star);
         }
         
@@ -163,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (hasHalfStar) {
             const halfStar = document.createElement('span');
             halfStar.className = 'star half';
-            halfStar.innerHTML = '★';
+            halfStar.textContent = '★';
             starsContainer.appendChild(halfStar);
         }
         
@@ -172,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < emptyStars; i++) {
             const emptyStar = document.createElement('span');
             emptyStar.className = 'star empty';
-            emptyStar.innerHTML = '☆';
+            emptyStar.textContent = '☆';
             starsContainer.appendChild(emptyStar);
         }
         
@@ -266,7 +271,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load featured products
     function loadFeaturedProducts() {
         const featuredGrid = document.getElementById('featured-products-grid');
-        featuredGrid.innerHTML = '';
+        // Clear grid safely without innerHTML
+        while (featuredGrid.firstChild) {
+            featuredGrid.removeChild(featuredGrid.firstChild);
+        }
         
         const featuredProducts = products.filter(p => p.featured);
         featuredProducts.forEach(product => {
@@ -281,7 +289,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     function loadProducts() {
         const productsGrid = document.getElementById('products-grid');
-        productsGrid.innerHTML = '';
+        // Clear grid safely without innerHTML
+        while (productsGrid.firstChild) {
+            productsGrid.removeChild(productsGrid.firstChild);
+        }
         
         const startIndex = (currentPage - 1) * productsPerPage;
         const paginatedProducts = filteredProducts.slice(startIndex, startIndex + productsPerPage);

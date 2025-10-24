@@ -67,7 +67,7 @@ echo "$CURRENT_PARAMS" | jq -r '.[] | "\(.ParameterKey)=\(.ParameterValue)"'
 # Validate the template
 echo ""
 echo "Validating CloudFormation template..."
-aws cloudformation validate-template --template-body file://cloudformation-simple.yaml > /dev/null
+aws cloudformation validate-template --template-body file://cloudformation-template.yaml > /dev/null
 echo "Template validation successful!"
 
 # Show what will be updated
@@ -75,14 +75,67 @@ echo ""
 echo "Generating change set to preview changes..."
 CHANGE_SET_NAME="update-$(date +%s)"
 
-# Convert parameters to the correct format for change set
-PARAM_OVERRIDES=$(echo "$CURRENT_PARAMS" | jq -r '.[] | "ParameterKey=\(.ParameterKey),UsePreviousValue=true"' | tr '\n' ' ')
+# Build parameters array for change set
+echo "Building parameters for change set..."
 
-aws cloudformation create-change-set \
-    --stack-name "$STACK_NAME" \
-    --template-body file://cloudformation-simple.yaml \
-    --change-set-name "$CHANGE_SET_NAME" \
-    --parameters $PARAM_OVERRIDES
+# Create parameters file for easier handling
+PARAMS_FILE="/tmp/stack-params-$$.json"
+echo "$CURRENT_PARAMS" > "$PARAMS_FILE"
+
+# Get template parameters to know what's available in the new template
+echo "Getting template parameters..."
+TEMPLATE_PARAMS=$(aws cloudformation validate-template --template-body file://cloudformation-template.yaml --query 'Parameters[].ParameterKey' --output text)
+echo "Template parameters: $TEMPLATE_PARAMS"
+
+# Build parameter overrides - only use previous values for parameters that exist in both old stack and new template
+PARAM_ARGS=""
+if [ -s "$PARAMS_FILE" ] && [ "$CURRENT_PARAMS" != "null" ] && [ "$CURRENT_PARAMS" != "[]" ]; then
+    # Extract parameter keys from current stack
+    CURRENT_PARAM_KEYS=$(echo "$CURRENT_PARAMS" | jq -r '.[].ParameterKey' 2>/dev/null || echo "")
+    
+    if [ -n "$CURRENT_PARAM_KEYS" ] && [ -n "$TEMPLATE_PARAMS" ]; then
+        echo "Matching parameters between current stack and new template..."
+        for current_key in $CURRENT_PARAM_KEYS; do
+            # Check if this parameter exists in the new template
+            if echo "$TEMPLATE_PARAMS" | grep -q "\b$current_key\b"; then
+                echo "  Using previous value for: $current_key"
+                PARAM_ARGS="$PARAM_ARGS ParameterKey=$current_key,UsePreviousValue=true"
+            else
+                echo "  Skipping parameter not in new template: $current_key"
+            fi
+        done
+        
+        # Add new parameters with default values (they'll use template defaults)
+        for template_key in $TEMPLATE_PARAMS; do
+            if ! echo "$CURRENT_PARAM_KEYS" | grep -q "\b$template_key\b"; then
+                echo "  New parameter will use template default: $template_key"
+            fi
+        done
+    fi
+fi
+
+echo "Parameters being used: $PARAM_ARGS"
+echo ""
+
+# Create change set with proper parameter handling
+if [ -n "$PARAM_ARGS" ]; then
+    echo "Creating change set with existing parameter values..."
+    aws cloudformation create-change-set \
+        --stack-name "$STACK_NAME" \
+        --template-body file://cloudformation-template.yaml \
+        --change-set-name "$CHANGE_SET_NAME" \
+        --parameters $PARAM_ARGS
+else
+    # Create change set with template defaults for all parameters
+    echo "Creating change set with template defaults for all parameters..."
+    aws cloudformation create-change-set \
+        --stack-name "$STACK_NAME" \
+        --template-body file://cloudformation-template.yaml \
+        --change-set-name "$CHANGE_SET_NAME"
+fi
+
+# Clean up temp file
+rm -f "$PARAMS_FILE"
 
 echo "Waiting for change set creation..."
 aws cloudformation wait change-set-create-complete \
