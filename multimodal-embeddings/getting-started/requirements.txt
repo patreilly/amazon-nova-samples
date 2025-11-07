@@ -23,6 +23,7 @@ chromadb==1.0.20
 click==8.2.1
 coloredlogs==15.0.1
 comm==0.2.3
+datasets==3.2.0
 debugpy==1.8.16
 decorator==5.2.1
 defusedxml==0.7.1

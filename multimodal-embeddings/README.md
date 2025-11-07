@@ -17,6 +17,7 @@ Amazon Nova provides state-of-the-art multimodal embeddings that can process and
 | 🎵 `04_basics_audio_embeddings.ipynb` | Audio | Audio content processing and feature extraction |
 | 📄 `05_example_document_embedding_retrieval.ipynb` | Documents | Multi-page document processing and chunking |
 | 🔍 `06_example_text_query_embeddings.ipynb` | Queries | Creating embeddings optimized for search |
+| ⚡ `07_batch_inference_sample.ipynb` | Batch | Batch processing for multiple embeddings |
 
 ## 🏗️ Repeatable Patterns
 
