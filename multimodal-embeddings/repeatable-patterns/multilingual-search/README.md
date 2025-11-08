@@ -7,5 +7,6 @@ Build semantic search that works across multiple languages, finding relevant con
 - Text (multiple languages)
 
 ## AWS Service Integration
-- Amazon Bedrock (Nova Multimodal Embedding model for cross-lingual text embeddings)
-- Amazon S3 Vectors (vector storage and similarity search)
+- Amazon Bedrock 
+- Amazon Nova Multimodal Embeddings 
+- Amazon S3 Vectors 
