@@ -7,5 +7,7 @@ Classify user intents across multiple languages using semantic embeddings and K-
 - Text (multiple languages)
 
 ## AWS Service Integration
-- Amazon Bedrock (Nova Multimodal Embedding model for cross-lingual semantic representations)
-- scikit-learn (K-Nearest Neighbors classifier for intent prediction)
+- Amazon Bedrock
+- Amazon Nova Multimodal Embeddings 
+- Amazon S3 Vectors
+
