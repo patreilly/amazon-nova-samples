@@ -38,6 +38,12 @@ Amazon Nova provides state-of-the-art multimodal embeddings that can process and
 | **Languages** | Python, Jupyter Notebooks |
 | **AWS Services** | Bedrock, S3, OpenSearch |
 
+## 🎯 End-to-End Demo
+
+For a complete demonstration of Nova multimodal embeddings in action, check out our comprehensive demo:
+
+🔗 [**Sample Demo of Nova MME**](https://github.com/aws-samples/sample-demo-of-nova-mme) - Full end-to-end implementation showcasing multimodal agentic RAG
+
 ## 🚀 Quick Start
 
 1. Start with `getting-started/00_setup.ipynb` for environment setup
