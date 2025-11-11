@@ -27,7 +27,8 @@ Amazon Nova provides state-of-the-art multimodal embeddings that can process and
 | 🌍 [**Multilingual Text Clustering**](repeatable-patterns/multilingual-text-clustering/) | Nova Embeddings, Clustering, Visualization | News Analysis | Cluster news articles across languages (German, Spanish, English) |
 | 📚 [**Multimodal Doc Search Framework**](repeatable-patterns/multimodal-doc-search-opensource-framework/) | LangChain, LlamaIndex, FAISS | RAG Systems | Integration with open-source frameworks for document processing |
 | 🛍️ [**Visual Product Search**](repeatable-patterns/visual-product-search-with-image-text-embeddings/) | OpenSearch Serverless, Berkeley Objects | E-commerce | Search products using text descriptions and images |
-| 🔍 [**Multilingual Search**](repeatable-patterns/multilingual-search/) | Nova Embeddings, S3 Vectors | Build semantic search that works across multiple languages using vector similarity |
+| 🔍 [**Multilingual Search**](repeatable-patterns/multilingual-search/) | Nova Embeddings, S3 Vectors | Search Systems | Build semantic search that works across multiple languages using vector similarity |
+| 🎯 [**Multilingual Intent Classification**](repeatable-patterns/multilingual-intent-classification/) | Nova Embeddings, K-Nearest Neighbors | Customer Service | Classify user intents across multiple languages using semantic embeddings |
 
 ## 🛠️ Technology Stack
 
